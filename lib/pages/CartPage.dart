@@ -11,6 +11,7 @@ class _CartPageState extends State<CartPage> {
   late Stream<List<CartItem>> cartItemsStream;
   Set<int> selectedItems = {}; // Track selected item IDs
   bool selectAll = false; // Track "Select All" state
+  List<CartItem> cartItems = []; // Cache cart items
 
   @override
   void initState() {
@@ -26,86 +27,90 @@ class _CartPageState extends State<CartPage> {
           .doc(user.uid)
           .collection('cart')
           .snapshots()
-          .map((snapshot) => snapshot.docs.map((doc) {
-        final data = doc.data();
-        return CartItem.fromFirestore(doc);
-      }).toList());
+          .map((snapshot) =>
+          snapshot.docs.map((doc) {
+            final data = doc.data();
+            return CartItem.fromFirestore(doc);
+          }).toList());
+      cartItemsStream.listen((items) {
+        setState(() {
+          cartItems = items;
+          // Sync selectedItems with the updated cartItems
+          if (selectAll) {
+            selectedItems = cartItems.map((item) => item.itemLabel.hashCode).toSet();
+          } else {
+            selectedItems = cartItems.where((item) => item.selected).map((item) => item.itemLabel.hashCode).toSet();
+          }
+        });
+      });
     } else {
       cartItemsStream = Stream.value([]);
     }
   }
 
-  Future<void> updateCartItem(int id, Map<String, dynamic> updates) async {
+  Future<void> updateCartItemByLabel(String itemLabel,
+      Map<String, dynamic> updates) async {
     final FirebaseAuth auth = FirebaseAuth.instance;
     final FirebaseFirestore firestore = FirebaseFirestore.instance;
     final User? user = auth.currentUser;
 
     if (user != null) {
-      final exists = await documentExists(user.uid, id);
-      if (exists) {
-        await firestore
-            .collection('users')
-            .doc(user.uid)
-            .collection('cart')
-            .doc(id.toString())
-            .update(updates);
+      final cartCollection = firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('cart');
+
+      final querySnapshot = await cartCollection
+          .where('itemLabel', isEqualTo: itemLabel)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        for (var doc in querySnapshot.docs) {
+          await doc.reference.set(updates, SetOptions(merge: true));
+        }
       } else {
-        print('Document does not exist at path: users/${user.uid}/cart/$id');
+        await cartCollection.add({
+          'itemLabel': itemLabel,
+          ...updates
+        });
       }
     }
   }
 
-  Future<bool> documentExists(String userId, int id) async {
-    final FirebaseFirestore firestore = FirebaseFirestore.instance;
-    final doc = await firestore
-        .collection('users')
-        .doc(userId)
-        .collection('cart')
-        .doc(id.toString())
-        .get();
-    return doc.exists;
-  }
-
-  void handleCheckboxChanged(bool? value, int id) {
+  void handleCheckboxChanged(bool? value, String itemLabel) {
     setState(() {
       if (value == true) {
-        selectedItems.add(id);
+        selectedItems.add(itemLabel.hashCode); // or some unique identifier
       } else {
-        selectedItems.remove(id);
+        selectedItems.remove(itemLabel.hashCode);
       }
+      updateCartItemByLabel(itemLabel, {'selected': value});
     });
-    updateCartItem(id, {'selected': value});
   }
 
-  void handleQuantityChanged(int id, int quantity) {
+  void handleQuantityChanged(String itemLabel, int quantity) {
     setState(() {
-      updateCartItem(id, {'quantity': quantity});
+      updateCartItemByLabel(itemLabel, {'quantity': quantity});
     });
   }
 
-  void handleSizeChanged(int id, String? size) {
-    updateCartItem(id, {'itemSize': size});
+  void handleSizeChanged(String itemLabel, String? size) {
+    updateCartItemByLabel(itemLabel, {'itemSize': size});
   }
 
   void handleSelectAllChanged(bool? value) {
     setState(() {
       selectAll = value ?? false;
-      selectedItems.clear();
       if (selectAll) {
-        // Load cart items and mark all as selected
-        cartItemsStream.listen((items) {
-          for (var item in items) {
-            selectedItems.add(item.id);
-            updateCartItem(item.id, {'selected': true});
-          }
-        });
+        selectedItems = cartItems.map((item) => item.itemLabel.hashCode).toSet();
+        for (var item in cartItems) {
+          updateCartItemByLabel(item.itemLabel, {'selected': true});
+        }
       } else {
-        // Unselect all items
-        cartItemsStream.listen((items) {
-          for (var item in items) {
-            updateCartItem(item.id, {'selected': false});
-          }
-        });
+        selectedItems.clear();
+        for (var item in cartItems) {
+          updateCartItemByLabel(item.itemLabel, {'selected': false});
+        }
       }
     });
   }
@@ -189,7 +194,6 @@ class _CartPageState extends State<CartPage> {
   }
 
   Widget buildCartItem(CartItem item) {
-    // Calculate total price
     final totalPrice = item.price * item.quantity;
 
     return Card(
@@ -199,9 +203,9 @@ class _CartPageState extends State<CartPage> {
         child: Row(
           children: [
             Checkbox(
-              value: selectedItems.contains(item.id),
+              value: selectedItems.contains(item.itemLabel.hashCode),
               onChanged: (bool? value) {
-                handleCheckboxChanged(value, item.id);
+                handleCheckboxChanged(value, item.itemLabel);
               },
             ),
             Image.asset(
@@ -216,7 +220,7 @@ class _CartPageState extends State<CartPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    item.label,
+                    item.itemLabel,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -235,7 +239,7 @@ class _CartPageState extends State<CartPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        '₱${totalPrice}',  // Show total price here
+                        '₱${totalPrice}',
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.black,
@@ -247,7 +251,7 @@ class _CartPageState extends State<CartPage> {
                             icon: Icon(Icons.remove),
                             onPressed: item.quantity > 1
                                 ? () {
-                              handleQuantityChanged(item.id, item.quantity - 1);
+                              handleQuantityChanged(item.itemLabel, item.quantity - 1);
                             }
                                 : null,
                           ),
@@ -255,7 +259,7 @@ class _CartPageState extends State<CartPage> {
                           IconButton(
                             icon: Icon(Icons.add),
                             onPressed: () {
-                              handleQuantityChanged(item.id, item.quantity + 1);
+                              handleQuantityChanged(item.itemLabel, item.quantity + 1);
                             },
                           ),
                         ],
@@ -273,34 +277,34 @@ class _CartPageState extends State<CartPage> {
 }
 
 class CartItem {
-  final int id;
-  final String label;
+  final String itemLabel;
   final String imagePath;
   final List<String> availableSizes;
   String? selectedSize;
   final int price;
   int quantity;
+  bool selected; // Added field
 
   CartItem({
-    required this.id,
-    required this.label,
+    required this.itemLabel,
     required this.imagePath,
     required this.availableSizes,
     this.selectedSize,
     required this.price,
     this.quantity = 1,
+    this.selected = false, // Default to false
   });
 
   factory CartItem.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return CartItem(
-      id: data['id'] ?? 0,
-      label: data['itemLabel'] ?? 'Unknown',
+      itemLabel: data['itemLabel'] ?? 'Unknown',
       imagePath: data['imagePath'] ?? 'assets/images/placeholder.png',
       availableSizes: List<String>.from(data['availableSizes'] ?? []),
       selectedSize: data['itemSize'] as String?,
       price: data['price'] ?? 0,
       quantity: data['quantity'] ?? 1,
+      selected: data['selected'] ?? false, // Default to false
     );
   }
 }
