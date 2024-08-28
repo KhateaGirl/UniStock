@@ -1,10 +1,11 @@
-import 'package:UNISTOCK/ProfileInfo.dart';
+import 'package:UNISTOCK/services/notification_service.dart';
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:UNISTOCK/pages/home_page.dart';
+import 'package:UNISTOCK/pages/uniform_page.dart';
 import 'package:UNISTOCK/pages/MerchAccessoriesPage.dart';
 import 'package:UNISTOCK/pages/ProfilePage.dart';
-import 'package:UNISTOCK/pages/uniform_page.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
-import 'package:UNISTOCK/pages/home_page.dart';
+import 'package:UNISTOCK/ProfileInfo.dart';
 
 class CheckoutPage extends StatelessWidget {
   final String itemLabel;
@@ -13,6 +14,9 @@ class CheckoutPage extends StatelessWidget {
   final int price;
   final int quantity;
   final ProfileInfo currentProfileInfo;
+
+  // Add a NotificationService instance
+  final NotificationService notificationService = NotificationService();
 
   CheckoutPage({
     required this.itemLabel,
@@ -70,6 +74,13 @@ class CheckoutPage extends StatelessWidget {
                   'quantity': quantity,
                   'orderDate': FieldValue.serverTimestamp(),
                 });
+
+                // Show notification after successful checkout
+                await notificationService.showNotification(
+                  0,
+                  'Order Placed',
+                  'Your order for $itemLabel has been successfully placed!',
+                );
 
                 Navigator.pop(context);
                 Navigator.push(
@@ -203,6 +214,7 @@ class CheckoutPage extends StatelessWidget {
   }
 }
 
+
 class PurchaseSummaryPage extends StatelessWidget {
   final String itemLabel;
   final String itemSize;
@@ -224,7 +236,7 @@ class PurchaseSummaryPage extends StatelessWidget {
     try {
       CollectionReference orders = FirebaseFirestore.instance
           .collection('users')
-          .doc(currentProfileInfo.studentId)
+          .doc(currentProfileInfo.userId) // Make sure to use userId
           .collection('orders');
 
       await orders.add({
@@ -244,6 +256,9 @@ class PurchaseSummaryPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Calculate the total cost
+    final int totalCost = price * quantity;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Color(0xFF046be0),
@@ -295,18 +310,23 @@ class PurchaseSummaryPage extends StatelessWidget {
                           fontSize: 16,
                         ),
                       ),
-                      SizedBox(height: 5),
                       Text(
                         'Price: \$$price',
                         style: TextStyle(
                           fontSize: 16,
                         ),
                       ),
-                      SizedBox(height: 5),
                       Text(
                         'Quantity: $quantity',
                         style: TextStyle(
                           fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        'Total: \$$totalCost', // Display the total cost
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],

@@ -28,7 +28,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    _fetchUserProfile(); // Fetch user profile including the image URL
+    _fetchUserProfile();
     _fetchUserOrders();
     currentProfileInfo = widget.profileInfo;
   }
@@ -54,15 +54,16 @@ class _ProfilePageState extends State<ProfilePage> {
       User? currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser != null) {
         QuerySnapshot orderSnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
             .collection('orders')
-            .where('userId', isEqualTo: currentUser.uid)
             .get();
 
         setState(() {
           orders = orderSnapshot.docs.map((doc) {
             final data = doc.data() as Map<String, dynamic>;
             return UNISTOCKOrder.Order(
-              itemName: data['itemName'] ?? '',
+              itemName: data['itemLabel'] ?? '', // Use the field names that match your Firestore data
               quantity: data['quantity'] ?? 0,
               price: data['price'] ?? 0,
             );
@@ -71,7 +72,7 @@ class _ProfilePageState extends State<ProfilePage> {
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to fetch orders.')),
+        SnackBar(content: Text('Failed to fetch orders: $e')),
       );
     }
   }

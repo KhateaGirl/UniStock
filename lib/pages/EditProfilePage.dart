@@ -28,39 +28,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   void initState() {
     super.initState();
-    _fetchUserProfile(); // Fetch the latest profile data from Firestore
-  }
-
-  Future<void> _fetchUserProfile() async {
-    try {
-      User? currentUser = _auth.currentUser;
-      if (currentUser != null) {
-        DocumentSnapshot userDoc =
-        await _firestore.collection('users').doc(currentUser.uid).get();
-        if (userDoc.exists) {
-          ProfileInfo fetchedProfileInfo = ProfileInfo.fromDocumentSnapshot(
-              userDoc.data() as Map<String, dynamic>);
-          setState(() {
-            _nameController =
-                TextEditingController(text: fetchedProfileInfo.name);
-            _studentIdController =
-                TextEditingController(text: fetchedProfileInfo.studentId);
-            _contactNumberController =
-                TextEditingController(text: fetchedProfileInfo.contactNumber);
-            _emailController =
-                TextEditingController(text: fetchedProfileInfo.email);
-            _addressController =
-                TextEditingController(text: fetchedProfileInfo.address);
-            _passwordController = TextEditingController(text: '********'); // Display asterisks for the password
-          });
-        }
-      }
-    } catch (e) {
-      print('Failed to fetch user profile: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to fetch user profile.')),
-      );
-    }
+    _nameController = TextEditingController(text: widget.profileInfo.name);
+    _studentIdController = TextEditingController(text: widget.profileInfo.studentId);
+    _contactNumberController = TextEditingController(text: widget.profileInfo.contactNumber);
+    _emailController = TextEditingController(text: widget.profileInfo.email);
+    _addressController = TextEditingController(text: widget.profileInfo.address);
+    _passwordController = TextEditingController(text: ''); // Empty password initially
   }
 
   @override
@@ -99,7 +72,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         });
 
         // If the password has been changed, update it
-        if (_passwordController.text != '********') {
+        if (_passwordController.text.isNotEmpty) {
           await currentUser.updatePassword(_passwordController.text);
         }
 
