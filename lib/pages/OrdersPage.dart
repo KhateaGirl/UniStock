@@ -1,3 +1,4 @@
+import 'package:UNISTOCK/pages/OrdersPage.dart' as UNISTOCKOrder;
 import 'package:flutter/material.dart';
 
 class Order {
@@ -12,7 +13,7 @@ class Order {
   });
 }
 class OrdersPage extends StatelessWidget {
-  final List<Order> orders;
+  final List<UNISTOCKOrder.Order> orders;
 
   OrdersPage({required this.orders});
 
@@ -20,23 +21,47 @@ class OrdersPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Orders'),
         backgroundColor: Color(0xFF046be0),
+        title: Text('My Orders'),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ListView.builder(
-          itemCount: orders.length,
-          itemBuilder: (context, index) {
-            final order = orders[index];
-            return ListTile(
-              title: Text(order.itemName),
-              subtitle:
-                  Text('Quantity: ${order.quantity}, Price: \$${order.price}'),
-            );
-          },
-        ),
+      body: orders.isEmpty
+          ? Center(child: Text('No orders found.'))
+          : ListView.builder(
+        padding: EdgeInsets.all(16.0),
+        itemCount: orders.length,
+        itemBuilder: (context, index) {
+          final order = orders[index];
+          return Card(
+            margin: EdgeInsets.symmetric(vertical: 8.0),
+            elevation: 4,
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    order.itemName,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text('Quantity: ${order.quantity}'),
+                  Text('Price: \$${order.price}'),
+                  Text(
+                    'Total: \$${order.price * order.quantity}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
