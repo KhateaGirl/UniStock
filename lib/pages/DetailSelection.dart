@@ -1,4 +1,5 @@
 import 'package:UNISTOCK/ProfileInfo.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:UNISTOCK/pages/CheckoutPage.dart'; // Adjust the import path as necessary
 
@@ -30,9 +31,12 @@ class _DetailSelectionState extends State<DetailSelection> {
   @override
   void initState() {
     super.initState();
-    _currentQuantity = widget.quantity;
-    _selectedSize = widget.itemSize ??
-        ''; // Initialize selected size from widget's initial value or empty string
+
+    // Debugging statement to check the initial value of quantity
+    print("Initial quantity: ${widget.quantity}");
+
+    _currentQuantity = widget.quantity; // Initialize _currentQuantity with the quantity parameter
+    _selectedSize = widget.itemSize ?? ''; // Initialize _selectedSize with itemSize or default to empty string
   }
 
   bool get showSizeOptions => widget.itemSize != null;
@@ -77,11 +81,30 @@ class _DetailSelectionState extends State<DetailSelection> {
     }
   }
 
-  void handleAddToCart() {
+  void handleAddToCart() async {
     if (showSizeOptions && _selectedSize.isEmpty) {
       showSizeNotSelectedDialog();
     } else {
-      // Add to cart logic
+      String userId = widget.currentProfileInfo.userId;
+
+      CollectionReference cartRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('cart');
+
+      await cartRef.add({
+        'itemLabel': widget.itemLabel,
+        'itemSize': showSizeOptions ? _selectedSize : null,
+        'imagePath': widget.imagePath,
+        'price': widget.price,
+        'quantity': _currentQuantity, // Make sure quantity is correctly set
+        'status': 'pending',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Item added to cart!')),
+      );
     }
   }
 

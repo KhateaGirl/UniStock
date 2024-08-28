@@ -139,14 +139,12 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (userCredential.user != null) {
-        // Fetch user profile information from Firestore
         DocumentSnapshot userDoc = await FirebaseFirestore.instance
             .collection('users')
             .doc(userCredential.user!.uid)
             .get();
 
         if (userDoc.exists) {
-          // Create a ProfileInfo object from Firestore data
           ProfileInfo profileInfo = ProfileInfo.fromDocumentSnapshot(
               userDoc.data() as Map<String, dynamic>);
 
@@ -193,7 +191,6 @@ class _LoginScreenState extends State<LoginScreen> {
             },
           ];
 
-          // Navigate to HomePage with the fetched profileInfo
           Navigator.push(
             context,
             PageRouteBuilder(
@@ -220,14 +217,12 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           );
         } else {
-          // Handle case where userDoc does not exist
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('User profile does not exist.')),
           );
         }
       }
     } on FirebaseAuthException catch (e) {
-      // Show an error message
       showDialog(
         context: context,
         builder: (context) {

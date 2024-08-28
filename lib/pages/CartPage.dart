@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class CartPage extends StatefulWidget {
@@ -6,28 +8,63 @@ class CartPage extends StatefulWidget {
 }
 
 class _CartPageState extends State<CartPage> {
-  List<CartItem> cartItems = [
-    CartItem(
-      id: 1,
-      label: 'SHS APRON',
-      imagePath: 'assets/images/SHS_APRON.png',
-      availableSizes: ['S', 'M', 'L', 'XL'],
-      price: 100,
-      quantity: 1,
-    ),
-    CartItem(
-      id: 2,
-      label: 'SHS PANTS',
-      imagePath: 'assets/images/SHS_PANTS.png',
-      availableSizes: ['S', 'M', 'L', 'XL'],
-      price: 150,
-      quantity: 1,
-    ),
-    // Add more items as needed
-  ];
+  late Stream<List<CartItem>> cartItemsStream;
+  Set<int> selectedItems = {}; // Track selected item IDs
+  bool selectAll = false; // Track "Select All" state
 
-  List<int> selectedItems = [];
-  bool selectAll = false;
+  @override
+  void initState() {
+    super.initState();
+    final FirebaseAuth auth = FirebaseAuth.instance;
+    final FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    final User? user = auth.currentUser;
+
+    if (user != null) {
+      cartItemsStream = firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('cart')
+          .snapshots()
+          .map((snapshot) => snapshot.docs.map((doc) {
+        final data = doc.data();
+        return CartItem.fromFirestore(doc);
+      }).toList());
+    } else {
+      cartItemsStream = Stream.value([]);
+    }
+  }
+
+  Future<void> updateCartItem(int id, Map<String, dynamic> updates) async {
+    final FirebaseAuth auth = FirebaseAuth.instance;
+    final FirebaseFirestore firestore = FirebaseFirestore.instance;
+    final User? user = auth.currentUser;
+
+    if (user != null) {
+      final exists = await documentExists(user.uid, id);
+      if (exists) {
+        await firestore
+            .collection('users')
+            .doc(user.uid)
+            .collection('cart')
+            .doc(id.toString())
+            .update(updates);
+      } else {
+        print('Document does not exist at path: users/${user.uid}/cart/$id');
+      }
+    }
+  }
+
+  Future<bool> documentExists(String userId, int id) async {
+    final FirebaseFirestore firestore = FirebaseFirestore.instance;
+    final doc = await firestore
+        .collection('users')
+        .doc(userId)
+        .collection('cart')
+        .doc(id.toString())
+        .get();
+    return doc.exists;
+  }
 
   void handleCheckboxChanged(bool? value, int id) {
     setState(() {
@@ -37,34 +74,44 @@ class _CartPageState extends State<CartPage> {
         selectedItems.remove(id);
       }
     });
+    updateCartItem(id, {'selected': value});
   }
 
   void handleQuantityChanged(int id, int quantity) {
     setState(() {
-      cartItems.firstWhere((item) => item.id == id).quantity = quantity;
+      updateCartItem(id, {'quantity': quantity});
     });
   }
 
-  void handleSizeChanged(int id, String size) {
-    setState(() {
-      cartItems.firstWhere((item) => item.id == id).selectedSize = size;
-    });
+  void handleSizeChanged(int id, String? size) {
+    updateCartItem(id, {'itemSize': size});
   }
 
   void handleSelectAllChanged(bool? value) {
     setState(() {
       selectAll = value ?? false;
+      selectedItems.clear();
       if (selectAll) {
-        selectedItems = cartItems.map((item) => item.id).toList();
+        // Load cart items and mark all as selected
+        cartItemsStream.listen((items) {
+          for (var item in items) {
+            selectedItems.add(item.id);
+            updateCartItem(item.id, {'selected': true});
+          }
+        });
       } else {
-        selectedItems.clear();
+        // Unselect all items
+        cartItemsStream.listen((items) {
+          for (var item in items) {
+            updateCartItem(item.id, {'selected': false});
+          }
+        });
       }
     });
   }
 
   void handleCheckout() {
-    // Implement your checkout logic here
-    print("Checked out items: $selectedItems");
+    print("Checked out items");
   }
 
   @override
@@ -74,55 +121,77 @@ class _CartPageState extends State<CartPage> {
         title: Text('Cart'),
         backgroundColor: Color(0xFF046be0),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                Checkbox(
-                  value: selectAll,
-                  onChanged: handleSelectAllChanged,
-                ),
-                Text(
-                  'Select All',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: cartItems.length,
-              itemBuilder: (context, index) {
-                return buildCartItem(cartItems[index]);
-              },
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: ElevatedButton(
-              onPressed: handleCheckout,
-              child: Text('Checkout'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFFFFEB3B),
-                padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                textStyle: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+      body: StreamBuilder<List<CartItem>>(
+        stream: cartItemsStream,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Center(child: Text('No items in the cart.'));
+          }
+
+          final cartItems = snapshot.data!;
+
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  children: [
+                    Checkbox(
+                      value: selectAll,
+                      onChanged: handleSelectAllChanged,
+                    ),
+                    Text(
+                      'Select All',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ),
-        ],
+              Expanded(
+                child: ListView.builder(
+                  itemCount: cartItems.length,
+                  itemBuilder: (context, index) {
+                    return buildCartItem(cartItems[index]);
+                  },
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: ElevatedButton(
+                  onPressed: handleCheckout,
+                  child: Text('Checkout'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFFFFEB3B),
+                    padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                    textStyle: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
   Widget buildCartItem(CartItem item) {
+    // Calculate total price
+    final totalPrice = item.price * item.quantity;
+
     return Card(
       margin: EdgeInsets.all(8.0),
       child: Padding(
@@ -154,25 +223,19 @@ class _CartPageState extends State<CartPage> {
                     ),
                   ),
                   SizedBox(height: 8),
-                  DropdownButton<String>(
-                    value: item.selectedSize,
-                    hint: Text('Select Size'),
-                    onChanged: (newSize) {
-                      handleSizeChanged(item.id, newSize!);
-                    },
-                    items: item.availableSizes.map((size) {
-                      return DropdownMenuItem<String>(
-                        value: size,
-                        child: Text(size),
-                      );
-                    }).toList(),
+                  Text(
+                    'Size: ${item.selectedSize ?? 'N/A'}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[600],
+                    ),
                   ),
                   SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        '₱${item.price}',
+                        '₱${totalPrice}',  // Show total price here
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.black,
@@ -184,9 +247,8 @@ class _CartPageState extends State<CartPage> {
                             icon: Icon(Icons.remove),
                             onPressed: item.quantity > 1
                                 ? () {
-                                    handleQuantityChanged(
-                                        item.id, item.quantity - 1);
-                                  }
+                              handleQuantityChanged(item.id, item.quantity - 1);
+                            }
                                 : null,
                           ),
                           Text('${item.quantity}'),
@@ -228,4 +290,17 @@ class CartItem {
     required this.price,
     this.quantity = 1,
   });
+
+  factory CartItem.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return CartItem(
+      id: data['id'] ?? 0,
+      label: data['itemLabel'] ?? 'Unknown',
+      imagePath: data['imagePath'] ?? 'assets/images/placeholder.png',
+      availableSizes: List<String>.from(data['availableSizes'] ?? []),
+      selectedSize: data['itemSize'] as String?,
+      price: data['price'] ?? 0,
+      quantity: data['quantity'] ?? 1,
+    );
+  }
 }
