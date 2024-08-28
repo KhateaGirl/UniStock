@@ -1,11 +1,16 @@
+import 'package:UNISTOCK/ProfileInfo.dart';
 import 'package:flutter/material.dart';
 import 'package:UNISTOCK/pages/DetailSelection.dart';
 import 'package:UNISTOCK/pages/CartPage.dart';
 
 class CollegeUniSelectionPage extends StatefulWidget {
   final String courseLabel;
+  final ProfileInfo currentProfileInfo;
 
-  CollegeUniSelectionPage({required this.courseLabel});
+  CollegeUniSelectionPage({
+    required this.currentProfileInfo,
+    required this.courseLabel,
+  });
 
   @override
   _CollegeUniSelectionPageState createState() =>
@@ -327,8 +332,9 @@ class _CollegeUniSelectionPageState extends State<CollegeUniSelectionPage> {
                         'size'], // Pass this if available, otherwise set it to null
                     imagePath: item['imagePath'],
                     price: item['price'],
-                    quantity: item['quantity'] ??
-                        1, // Default to 1 if quantity is not available
+                    quantity: item['quantity'] ?? 1,
+                    currentProfileInfo: widget.currentProfileInfo, // Pass the profile info
+// Default to 1 if quantity is not available
                   ),
                 ),
               );

@@ -1,3 +1,4 @@
+import 'package:UNISTOCK/ProfileInfo.dart';
 import 'package:flutter/material.dart';
 import 'package:UNISTOCK/pages/CheckoutPage.dart'; // Adjust the import path as necessary
 
@@ -7,6 +8,7 @@ class DetailSelection extends StatefulWidget {
   final String imagePath;
   final int price;
   final int quantity;
+  final ProfileInfo currentProfileInfo;
 
   DetailSelection({
     required this.itemLabel,
@@ -14,6 +16,7 @@ class DetailSelection extends StatefulWidget {
     required this.imagePath,
     required this.price,
     required this.quantity,
+    required this.currentProfileInfo,
   });
 
   @override
@@ -67,6 +70,7 @@ class _DetailSelectionState extends State<DetailSelection> {
             imagePath: widget.imagePath,
             price: widget.price,
             quantity: _currentQuantity,
+            currentProfileInfo: widget.currentProfileInfo, // Pass the correct profile info here
           ),
         ),
       );

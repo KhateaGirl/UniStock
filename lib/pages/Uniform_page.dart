@@ -1,10 +1,15 @@
+import 'package:UNISTOCK/ProfileInfo.dart';
+import 'package:UNISTOCK/pages/ProwareshirtsPage.dart';
 import 'package:flutter/material.dart';
 import 'package:UNISTOCK/pages/CartPage.dart';
 import 'package:UNISTOCK/pages/CollegeUniformPage.dart';
 import 'package:UNISTOCK/pages/SHSUniformsPage.dart';
-import 'package:UNISTOCK/pages/ProwareShirtsPage.dart';
 
 class UniformPage extends StatelessWidget {
+  final ProfileInfo currentProfileInfo;
+
+  UniformPage({required this.currentProfileInfo});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -17,7 +22,7 @@ class UniformPage extends StatelessWidget {
               fontSize: 24.0,
               fontWeight: FontWeight.bold,
               fontFamily: 'Arial',
-              color: Colors.white, 
+              color: Colors.white,
             ),
             children: <TextSpan>[
               TextSpan(text: 'UNI'),
@@ -48,7 +53,9 @@ class UniformPage extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => CollegeUniformsPage(),
+                      builder: (context) => CollegeUniformsPage(
+                        currentProfileInfo: currentProfileInfo, // Pass the ProfileInfo here
+                      ),
                     ),
                   );
                 },
@@ -59,7 +66,7 @@ class UniformPage extends StatelessWidget {
                       children: [
                         ClipRRect(
                           borderRadius:
-                              BorderRadius.circular(15.0), // Rounded corners
+                          BorderRadius.circular(15.0), // Rounded corners
                           child: Image.asset(
                             'assets/images/college uniform.png',
                             fit: BoxFit.cover,
@@ -84,7 +91,11 @@ class UniformPage extends StatelessWidget {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => SHSUniformsPage()),
+                    MaterialPageRoute(
+                      builder: (context) => SHSUniformsPage(
+                        currentProfileInfo: currentProfileInfo, // Pass the ProfileInfo here
+                      ),
+                    ),
                   );
                 },
                 child: Center(
@@ -94,7 +105,7 @@ class UniformPage extends StatelessWidget {
                       children: [
                         ClipRRect(
                           borderRadius:
-                              BorderRadius.circular(15.0), // Rounded corners
+                          BorderRadius.circular(15.0), // Rounded corners
                           child: Image.asset(
                             'assets/images/shs uniform.png',
                             fit: BoxFit.cover,
@@ -120,7 +131,9 @@ class UniformPage extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => ProwareShirtsPage(),
+                      builder: (context) => ProwareShirtsPage(
+                        currentProfileInfo: currentProfileInfo, // Pass the ProfileInfo here
+                      ),
                     ),
                   );
                 },
@@ -131,7 +144,7 @@ class UniformPage extends StatelessWidget {
                       children: [
                         ClipRRect(
                           borderRadius:
-                              BorderRadius.circular(15.0), // Rounded corners
+                          BorderRadius.circular(15.0), // Rounded corners
                           child: Image.asset(
                             'assets/images/washdayshirt.png',
                             fit: BoxFit.cover,

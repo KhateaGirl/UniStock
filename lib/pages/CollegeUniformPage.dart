@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:UNISTOCK/pages/CartPage.dart';
 import 'package:UNISTOCK/pages/SizeAndUniformSelection.dart';
+import 'package:UNISTOCK/ProfileInfo.dart'; // Import ProfileInfo class
 
 class CollegeUniformsPage extends StatelessWidget {
+  final ProfileInfo currentProfileInfo;
+
+  CollegeUniformsPage({required this.currentProfileInfo}); // Add the constructor
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -96,8 +101,10 @@ class CollegeUniformsPage extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) =>
-                CollegeUniSelectionPage(courseLabel: courseLabel),
+            builder: (context) => CollegeUniSelectionPage(
+              courseLabel: courseLabel,
+              currentProfileInfo: currentProfileInfo, // Pass the profile info here
+            ),
           ),
         );
       },

@@ -1,5 +1,6 @@
+import 'package:UNISTOCK/ProfileInfo.dart';
 import 'package:flutter/material.dart';
-import 'package:UNISTOCK/pages/CheckoutPage.dart'; // Adjust the import path as necessary
+import 'package:UNISTOCK/pages/CheckoutPage.dart';
 
 class MerchSelectionPage extends StatefulWidget {
   final String itemLabel;
@@ -7,7 +8,8 @@ class MerchSelectionPage extends StatefulWidget {
   final String imagePath;
   final int price;
   final int quantity;
-  final bool showSizeOptions; // Determine if size options should be shown
+  final bool showSizeOptions;
+  final ProfileInfo currentProfileInfo;
 
   MerchSelectionPage({
     required this.itemLabel,
@@ -15,6 +17,7 @@ class MerchSelectionPage extends StatefulWidget {
     required this.imagePath,
     required this.price,
     required this.quantity,
+    required this.currentProfileInfo,
   }) : showSizeOptions = itemLabel.toLowerCase().contains('shirt');
 
   @override
@@ -66,6 +69,7 @@ class _MerchSelectionPageState extends State<MerchSelectionPage> {
             imagePath: widget.imagePath,
             price: widget.price,
             quantity: _currentQuantity,
+            currentProfileInfo: widget.currentProfileInfo, // Pass the correct profile info here
           ),
         ),
       );

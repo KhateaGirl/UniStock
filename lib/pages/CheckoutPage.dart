@@ -1,3 +1,8 @@
+import 'package:UNISTOCK/ProfileInfo.dart';
+import 'package:UNISTOCK/pages/MerchAccessoriesPage.dart';
+import 'package:UNISTOCK/pages/ProfilePage.dart';
+import 'package:UNISTOCK/pages/uniform_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:UNISTOCK/pages/home_page.dart';
 
@@ -7,6 +12,7 @@ class CheckoutPage extends StatelessWidget {
   final String imagePath;
   final int price;
   final int quantity;
+  final ProfileInfo currentProfileInfo;
 
   CheckoutPage({
     required this.itemLabel,
@@ -14,6 +20,7 @@ class CheckoutPage extends StatelessWidget {
     required this.imagePath,
     required this.price,
     required this.quantity,
+    required this.currentProfileInfo,
   });
 
   void showTermsAndConditionsDialog(BuildContext context) {
@@ -27,16 +34,15 @@ class CheckoutPage extends StatelessWidget {
             height: 300,
             child: SingleChildScrollView(
               child: Text(
-                // Randomly generated terms and conditions
                 '1. Acceptance of Terms: By accessing or using this service, you agree to be bound by these terms and conditions. If you do not agree with any part of these terms, you may not use the service.\n\n'
-                '2. Use of Service: The service provided is for personal and non-commercial use only. You agree not to modify, copy, distribute, transmit, display, perform, reproduce, publish, license, create derivative works from, transfer, or sell any information, software, products, or services obtained from the service.\n\n'
-                '3. User Responsibilities: You are responsible for maintaining the confidentiality of any account information and passwords used for this service. You agree to accept responsibility for all activities that occur under your account or password.\n\n'
-                '4. Privacy: Your use of the service is subject to our Privacy Policy, which governs the collection, use, and disclosure of your information. By using the service, you consent to the practices described in the Privacy Policy.\n\n'
-                '5. Limitation of Liability: In no event shall we be liable for any direct, indirect, incidental, special, consequential, or punitive damages arising out of or related to your use of the service, whether based on warranty, contract, tort (including negligence), or any other legal theory.\n\n'
-                '6. Indemnification: You agree to indemnify and hold harmless the service provider, its affiliates, officers, directors, employees, and agents from and against any claims, liabilities, damages, losses, and expenses, including without limitation reasonable legal and accounting fees, arising out of or in any way connected with your access to or use of the service or your violation of these terms.\n\n'
-                '7. Modification of Terms: We reserve the right to modify or revise these terms and conditions at any time without prior notice. By continuing to use the service after such modifications, you agree to be bound by the revised terms.\n\n'
-                '8. Governing Law: These terms and conditions shall be governed by and construed in accordance with the laws of [Jurisdiction], without regard to its conflict of law provisions.\n\n'
-                '9. Contact: If you have any questions or concerns about these terms and conditions, please contact us at [Contact Information].',
+                    '2. Use of Service: The service provided is for personal and non-commercial use only. You agree not to modify, copy, distribute, transmit, display, perform, reproduce, publish, license, create derivative works from, transfer, or sell any information, software, products, or services obtained from the service.\n\n'
+                    '3. User Responsibilities: You are responsible for maintaining the confidentiality of any account information and passwords used for this service. You agree to accept responsibility for all activities that occur under your account or password.\n\n'
+                    '4. Privacy: Your use of the service is subject to our Privacy Policy, which governs the collection, use, and disclosure of your information. By using the service, you consent to the practices described in the Privacy Policy.\n\n'
+                    '5. Limitation of Liability: In no event shall we be liable for any direct, indirect, incidental, special, consequential, or punitive damages arising out of or related to your use of the service, whether based on warranty, contract, tort (including negligence), or any other legal theory.\n\n'
+                    '6. Indemnification: You agree to indemnify and hold harmless the service provider, its affiliates, officers, directors, employees, and agents from and against any claims, liabilities, damages, losses, and expenses, including without limitation reasonable legal and accounting fees, arising out of or in any way connected with your access to or use of the service or your violation of these terms.\n\n'
+                    '7. Modification of Terms: We reserve the right to modify or revise these terms and conditions at any time without prior notice. By continuing to use the service after such modifications, you agree to be bound by the revised terms.\n\n'
+                    '8. Governing Law: These terms and conditions shall be governed by and construed in accordance with the laws of [Jurisdiction], without regard to its conflict of law provisions.\n\n'
+                    '9. Contact: If you have any questions or concerns about these terms and conditions, please contact us at [Contact Information].',
                 style: TextStyle(fontSize: 14),
               ),
             ),
@@ -50,9 +56,22 @@ class CheckoutPage extends StatelessWidget {
             ),
             TextButton(
               child: Text('Accept'),
-              onPressed: () {
-                Navigator.of(context).pop();
-                // Show the summary page
+              onPressed: () async {
+                // Add order to Firestore
+                await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(currentProfileInfo.userId)
+                    .collection('orders')  // Subcollection for orders
+                    .add({
+                  'itemLabel': itemLabel,
+                  'itemSize': itemSize,
+                  'imagePath': imagePath,
+                  'price': price,
+                  'quantity': quantity,
+                  'orderDate': FieldValue.serverTimestamp(),
+                });
+
+                Navigator.pop(context);
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -62,6 +81,7 @@ class CheckoutPage extends StatelessWidget {
                       imagePath: imagePath,
                       price: price,
                       quantity: quantity,
+                      currentProfileInfo: currentProfileInfo,
                     ),
                   ),
                 );
@@ -189,6 +209,7 @@ class PurchaseSummaryPage extends StatelessWidget {
   final String imagePath;
   final int price;
   final int quantity;
+  final ProfileInfo currentProfileInfo;
 
   PurchaseSummaryPage({
     required this.itemLabel,
@@ -196,7 +217,30 @@ class PurchaseSummaryPage extends StatelessWidget {
     required this.imagePath,
     required this.price,
     required this.quantity,
+    required this.currentProfileInfo,
   });
+
+  Future<void> _saveOrderToFirestore() async {
+    try {
+      CollectionReference orders = FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentProfileInfo.studentId)
+          .collection('orders');
+
+      await orders.add({
+        'itemLabel': itemLabel,
+        'itemSize': itemSize,
+        'imagePath': imagePath,
+        'price': price,
+        'quantity': quantity,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      print("Order added to Firestore");
+    } catch (e) {
+      print("Failed to add order: $e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -272,12 +316,58 @@ class PurchaseSummaryPage extends StatelessWidget {
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
+                await _saveOrderToFirestore(); // Save the order to Firestore
+
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                      builder: (context) =>
-                          HomePage()), // Navigate to the home page
+                      builder: (context) => HomePage(
+                        profileInfo: currentProfileInfo,
+                        imagePaths: [
+                          'assets/images/sti announcement 1.png',
+                          'assets/images/sti announcement 2.png',
+                          'assets/images/sti announcement 3.png',
+                        ],
+                        navigationItems: [
+                          {
+                            'icon': Icons.inventory,
+                            'label': 'Uniform',
+                            'onPressed': () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        UniformPage(currentProfileInfo: currentProfileInfo)),
+                              );
+                            }
+                          },
+                          {
+                            'icon': Icons.shopping_bag,
+                            'label': 'Merch/Accessories',
+                            'onPressed': () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        MerchAccessoriesPage(currentProfileInfo: currentProfileInfo)),
+                              );
+                            }
+                          },
+                          {
+                            'icon': Icons.account_circle,
+                            'label': 'Profile',
+                            'onPressed': () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ProfilePage(profileInfo: currentProfileInfo),
+                                ),
+                              );
+                            }
+                          },
+                        ],
+                      )),
                 );
               },
               child: Text('Back to Home'),

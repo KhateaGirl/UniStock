@@ -1,40 +1,34 @@
+import 'package:UNISTOCK/ProfileInfo.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:dots_indicator/dots_indicator.dart';
 import 'package:UNISTOCK/pages/CartPage.dart';
 import 'package:UNISTOCK/pages/NotificationPage.dart';
-import 'package:UNISTOCK/pages/ProfilePage.dart';
-import 'package:UNISTOCK/Profileinfo.dart';
-import 'package:UNISTOCK/pages/MerchAccessoriesPage.dart'; // Import the MerchAccessoriesPage
-import 'uniform_page.dart';
 
 class HomePage extends StatefulWidget {
+  final ProfileInfo profileInfo;
+  final List<String> imagePaths;
+  final List<Map<String, dynamic>> navigationItems;
+
+  HomePage({
+    required this.profileInfo,
+    required this.imagePaths,
+    required this.navigationItems,
+  });
+
   @override
   _HomePageState createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
-  final List<String> imgList = [
-    'assets/images/sti announcement 1.png',
-    'assets/images/sti announcement 2.png',
-    'assets/images/sti announcement 3.png',
-  ];
-
-  final ProfileInfo profileInfo = ProfileInfo(
-    name: 'John Doe',
-    studentId: '123456789',
-    contactNumber: '123-456-7890',
-    email: 'john.doe@example.com',
-    address: '123 Main St, City, Country',
-  );
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Color(0xFF046be0),
-        automaticallyImplyLeading: false, // Removes the back button
+        automaticallyImplyLeading: false,
         title: RichText(
           textAlign: TextAlign.center,
           text: TextSpan(
@@ -42,7 +36,7 @@ class _HomePageState extends State<HomePage> {
               fontSize: 24.0,
               fontWeight: FontWeight.bold,
               fontFamily: 'Arial',
-              color: Colors.white, // Text color set to white
+              color: Colors.white,
             ),
             children: <TextSpan>[
               TextSpan(text: 'UNI'),
@@ -91,17 +85,17 @@ class _HomePageState extends State<HomePage> {
                           });
                         },
                       ),
-                      items: imgList
+                      items: widget.imagePaths
                           .map((item) => Container(
-                                child: Center(
-                                  child: Image.asset(item,
-                                      fit: BoxFit.cover, width: 1000),
-                                ),
-                              ))
+                        child: Center(
+                          child: Image.asset(item,
+                              fit: BoxFit.cover, width: 1000),
+                        ),
+                      ))
                           .toList(),
                     ),
                     DotsIndicator(
-                      dotsCount: imgList.length,
+                      dotsCount: widget.imagePaths.length,
                       position: _currentIndex.toDouble(),
                       decorator: DotsDecorator(
                         activeColor: Colors.blue,
@@ -146,42 +140,13 @@ class _HomePageState extends State<HomePage> {
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: <Widget>[
-                  Expanded(
-                    flex: 1,
-                    child: buildBottomNavItem(Icons.inventory, 'Uniform', () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => UniformPage()),
-                      );
-                    }),
-                  ),
-                  Expanded(
-                    flex: 1,
-                    child: buildBottomNavItem(
-                        Icons.shopping_bag, 'Merch/Accessories', () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => MerchAccessoriesPage()),
-                      );
-                    }),
-                  ),
-                  Expanded(
-                    flex: 1,
-                    child:
-                        buildBottomNavItem(Icons.account_circle, 'Profile', () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ProfilePage(
-                            profileInfo: profileInfo,
-                          ),
-                        ),
-                      );
-                    }),
-                  ),
-                ],
+                children: widget.navigationItems
+                    .map((item) => Expanded(
+                  flex: 1,
+                  child: buildBottomNavItem(
+                      item['icon'], item['label'], item['onPressed']),
+                ))
+                    .toList(),
               ),
             ),
           ),
@@ -214,7 +179,7 @@ class _HomePageState extends State<HomePage> {
             categoryName,
             style: TextStyle(
               fontSize: 12,
-              color: Colors.black, // Adjust text color here
+              color: Colors.black,
             ),
           ),
         ],

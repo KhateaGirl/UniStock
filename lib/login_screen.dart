@@ -1,8 +1,14 @@
+import 'package:UNISTOCK/ProfileInfo.dart';
+import 'package:UNISTOCK/pages/MerchAccessoriesPage.dart';
+import 'package:UNISTOCK/pages/ProfilePage.dart';
+import 'package:UNISTOCK/pages/Uniform_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:UNISTOCK/pages/home_page.dart';
 import 'package:UNISTOCK/services/auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:UNISTOCK/services/register.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -13,8 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _studentIdController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final Authservice _auth = Authservice();
-  final String _validStudentId = 'student123';
-  final String _validPassword = 'password123';
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -84,7 +89,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 obscureText: true,
               ),
               SizedBox(height: 40),
-              ElevatedButton(
+              _isLoading
+                  ? CircularProgressIndicator()
+                  : ElevatedButton(
                 onPressed: () {
                   _login(context);
                 },
@@ -97,21 +104,20 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               SizedBox(height: 20),
               ElevatedButton(
-                onPressed: () async {
-                  User? user = await _auth.signInAnon();
-                  if (user == null) {
-                    print('Error signing in');
-                  } else {
-                    print('Signed in as guest: ${user.uid}');
-                    _loginAsGuest(context);
-                  }
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => RegisterPage(),
+                    ),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.black,
-                  backgroundColor: Colors.grey,
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.blueAccent,
                   padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                 ),
-                child: Text('Guest'),
+                child: Text('Register'),
               ),
             ],
           ),
@@ -120,38 +126,114 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  void _login(BuildContext context) {
-    // Check if the credentials are valid
-    if (_studentIdController.text == _validStudentId &&
-        _passwordController.text == _validPassword) {
-      // Navigate to HomePage with a slide transition
-      Navigator.push(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) => HomePage(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            const begin = Offset(1.0, 0.0);
-            const end = Offset(0.0, 0.0);
-            const curve = Curves.ease;
+  void _login(BuildContext context) async {
+    setState(() {
+      _isLoading = true;
+    });
 
-            var tween =
-                Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-
-            return SlideTransition(
-              position: animation.drive(tween),
-              child: child,
-            );
-          },
-        ),
+    try {
+      UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(
+        email: _studentIdController.text.trim(),
+        password: _passwordController.text.trim(),
       );
-    } else {
+
+      if (userCredential.user != null) {
+        // Fetch user profile information from Firestore
+        DocumentSnapshot userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userCredential.user!.uid)
+            .get();
+
+        if (userDoc.exists) {
+          // Create a ProfileInfo object from Firestore data
+          ProfileInfo profileInfo = ProfileInfo.fromDocumentSnapshot(
+              userDoc.data() as Map<String, dynamic>);
+
+          final imagePaths = [
+            'assets/images/sti announcement 1.png',
+            'assets/images/sti announcement 2.png',
+            'assets/images/sti announcement 3.png',
+          ];
+
+          final navigationItems = [
+            {
+              'icon': Icons.inventory,
+              'label': 'Uniform',
+              'onPressed': () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => UniformPage(currentProfileInfo: profileInfo)),
+                );
+              }
+            },
+            {
+              'icon': Icons.shopping_bag,
+              'label': 'Merch/Accessories',
+              'onPressed': () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => MerchAccessoriesPage(currentProfileInfo: profileInfo)),
+                );
+              }
+            },
+            {
+              'icon': Icons.account_circle,
+              'label': 'Profile',
+              'onPressed': () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProfilePage(profileInfo: profileInfo),
+                  ),
+                );
+              }
+            },
+          ];
+
+          // Navigate to HomePage with the fetched profileInfo
+          Navigator.push(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  HomePage(
+                    profileInfo: profileInfo,
+                    imagePaths: imagePaths,
+                    navigationItems: navigationItems,
+                  ),
+              transitionsBuilder: (context, animation, secondaryAnimation,
+                  child) {
+                const begin = Offset(1.0, 0.0);
+                const end = Offset(0.0, 0.0);
+                const curve = Curves.ease;
+
+                var tween = Tween(begin: begin, end: end).chain(
+                    CurveTween(curve: curve));
+
+                return SlideTransition(
+                  position: animation.drive(tween),
+                  child: child,
+                );
+              },
+            ),
+          );
+        } else {
+          // Handle case where userDoc does not exist
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('User profile does not exist.')),
+          );
+        }
+      }
+    } on FirebaseAuthException catch (e) {
       // Show an error message
       showDialog(
         context: context,
         builder: (context) {
           return AlertDialog(
-            title: Text('Error'),
-            content: Text('Invalid Student ID or Password'),
+            title: Text('Login Error'),
+            content: Text(e.message ?? 'Unknown error occurred'),
             actions: <Widget>[
               TextButton(
                 child: Text('OK'),
@@ -163,29 +245,10 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         },
       );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
-  }
-
-  void _loginAsGuest(BuildContext context) {
-    // Logic for guest login (you can customize this as needed)
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => HomePage(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(1.0, 0.0);
-          const end = Offset(0.0, 0.0);
-          const curve = Curves.ease;
-
-          var tween =
-              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-
-          return SlideTransition(
-            position: animation.drive(tween),
-            child: child,
-          );
-        },
-      ),
-    );
   }
 }

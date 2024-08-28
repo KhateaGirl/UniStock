@@ -1,8 +1,12 @@
+import 'package:UNISTOCK/ProfileInfo.dart';
 import 'package:flutter/material.dart';
 import 'package:UNISTOCK/pages/CartPage.dart';
 import 'package:UNISTOCK/pages/DetailSelection.dart';
 
 class SHSUniformsPage extends StatefulWidget {
+  final ProfileInfo currentProfileInfo;
+
+  SHSUniformsPage({required this.currentProfileInfo});
   @override
   _SHSUniformsPageState createState() => _SHSUniformsPageState();
 }
@@ -231,6 +235,7 @@ class _SHSUniformsPageState extends State<SHSUniformsPage> {
               imagePath: imagePath,
               price: int.parse(price.substring(1)), // Remove ₱ and parse int
               quantity: 1,
+              currentProfileInfo: widget.currentProfileInfo, // Pass the profile info
             ),
           ),
         );

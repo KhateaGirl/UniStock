@@ -1,9 +1,13 @@
-import 'package:flutter/material.dart';
-import 'package:UNISTOCK/pages/EditProfilePage.dart';
-import 'package:UNISTOCK/Profileinfo.dart';
+import 'package:UNISTOCK/ProfileInfo.dart';
 import 'package:UNISTOCK/login_screen.dart';
-import 'package:UNISTOCK/pages/OrdersPage.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Import FirebaseAuth
+import 'package:UNISTOCK/pages/EditProfilePage.dart';
+import 'package:UNISTOCK/pages/OrdersPage.dart' as UNISTOCKOrder;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 class ProfilePage extends StatefulWidget {
   final ProfileInfo profileInfo;
@@ -15,40 +19,171 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  late ProfileInfo profileInfo;
-  List<Order> orders = []; // List to store orders
+  List<UNISTOCKOrder.Order>? orders;
+  File? _imageFile;
+  String? _imageUrl;
+
+  late ProfileInfo currentProfileInfo;
 
   @override
   void initState() {
     super.initState();
-    profileInfo = widget.profileInfo;
-    // Mock data for orders (replace with actual data retrieval logic)
-    orders = [
-      Order(itemName: 'T-Shirt', quantity: 2, price: 250),
-      Order(itemName: 'Hoodie', quantity: 1, price: 500),
-    ];
+    _fetchUserProfile(); // Fetch user profile including the image URL
+    _fetchUserOrders();
+    currentProfileInfo = widget.profileInfo;
+  }
+
+  Future<void> _fetchUserProfile() async {
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .get();
+
+      if (userDoc.exists) {
+        setState(() {
+          _imageUrl = userDoc['imageUrl'] as String?; // Fetch image URL from Firestore
+        });
+      }
+    }
+  }
+
+  Future<void> _fetchUserOrders() async {
+    try {
+      User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        QuerySnapshot orderSnapshot = await FirebaseFirestore.instance
+            .collection('orders')
+            .where('userId', isEqualTo: currentUser.uid)
+            .get();
+
+        setState(() {
+          orders = orderSnapshot.docs.map((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            return UNISTOCKOrder.Order(
+              itemName: data['itemName'] ?? '',
+              quantity: data['quantity'] ?? 0,
+              price: data['price'] ?? 0,
+            );
+          }).toList();
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to fetch orders.')),
+      );
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+      _uploadImageToStorage(); // Upload the image to Firebase Storage
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No image selected.')),
+      );
+    }
+  }
+
+  Future<void> _uploadImageToStorage() async {
+    if (_imageFile == null) return;
+
+    try {
+      User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        Reference storageRef = FirebaseStorage.instance
+            .ref()
+            .child('user_profile_images/${currentUser.uid}.jpg');
+        UploadTask uploadTask = storageRef.putFile(_imageFile!);
+        TaskSnapshot storageSnapshot = await uploadTask.whenComplete(() => {});
+
+        String downloadUrl = await storageSnapshot.ref.getDownloadURL();
+
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .update({'imageUrl': downloadUrl});
+
+        setState(() {
+          _imageUrl = downloadUrl;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Profile image updated successfully.')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to upload image: $e')),
+      );
+    }
+  }
+
+  void _viewOrders() {
+    if (orders == null || orders!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No orders available yet.')),
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => UNISTOCKOrder.OrdersPage(orders: orders!),
+        ),
+      );
+    }
   }
 
   void _editProfile() async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => EditProfilePage(profileInfo: profileInfo),
+        builder: (context) => EditProfilePage(profileInfo: currentProfileInfo),
       ),
     );
 
     if (result != null && result is ProfileInfo) {
       setState(() {
-        profileInfo = result;
+        currentProfileInfo = result;
       });
+
+      // Save the updated profile information back to Firestore
+      User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        try {
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(currentUser.uid)
+              .update({
+            'name': currentProfileInfo.name,
+            'studentId': currentProfileInfo.studentId,
+            'contactNumber': currentProfileInfo.contactNumber,
+            'email': currentProfileInfo.email,
+            'address': currentProfileInfo.address,
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Profile updated successfully.')),
+          );
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to update profile: $e')),
+          );
+        }
+      }
     }
   }
 
   void _logout() async {
     try {
-      await FirebaseAuth.instance.signOut(); // Sign out from Firebase
+      await FirebaseAuth.instance.signOut();
 
-      // Show a SnackBar to notify the user
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('You have been logged out.'),
@@ -57,7 +192,6 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
       );
 
-      // Delay navigation to give the SnackBar time to display
       Future.delayed(Duration(seconds: 2), () {
         Navigator.pushReplacement(
           context,
@@ -65,7 +199,6 @@ class _ProfilePageState extends State<ProfilePage> {
         );
       });
     } catch (e) {
-      print("Error signing out: $e"); // Handle errors
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error signing out.'),
@@ -74,15 +207,6 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
       );
     }
-  }
-
-  void _viewOrders() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => OrdersPage(orders: orders),
-      ),
-    );
   }
 
   @override
@@ -94,7 +218,7 @@ class _ProfilePageState extends State<ProfilePage> {
         centerTitle: true,
         actions: <Widget>[
           IconButton(
-            icon: Icon(Icons.description, color: Colors.white), // Paper icon
+            icon: Icon(Icons.description, color: Colors.white),
             onPressed: _viewOrders,
           ),
           IconButton(
@@ -109,14 +233,20 @@ class _ProfilePageState extends State<ProfilePage> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             SizedBox(height: 20),
-            CircleAvatar(
-              radius: 60,
-              backgroundImage: AssetImage('assets/images/profilepict.png'),
-              backgroundColor: Colors.grey[200],
+            GestureDetector(
+              onTap: _pickImage,
+              child: CircleAvatar(
+                radius: 60,
+                backgroundImage: _imageUrl != null
+                    ? NetworkImage(_imageUrl!)
+                    : AssetImage('assets/images/profilepict.png')
+                as ImageProvider,
+                backgroundColor: Colors.grey[200],
+              ),
             ),
             SizedBox(height: 20),
             Text(
-              profileInfo.name,
+              currentProfileInfo.name.isNotEmpty ? currentProfileInfo.name : "Name not available",
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -125,7 +255,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             SizedBox(height: 5),
             Text(
-              profileInfo.studentId,
+              currentProfileInfo.studentId.isNotEmpty ? currentProfileInfo.studentId : "Student ID not available",
               style: TextStyle(
                 fontSize: 18,
                 color: Colors.black54,
@@ -133,7 +263,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             SizedBox(height: 5),
             Text(
-              profileInfo.contactNumber,
+              currentProfileInfo.contactNumber.isNotEmpty ? currentProfileInfo.contactNumber : "Contact not available",
               style: TextStyle(
                 fontSize: 18,
                 color: Colors.black54,
@@ -155,7 +285,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
               subtitle: Text(
-                profileInfo.email,
+                currentProfileInfo.email.isNotEmpty ? currentProfileInfo.email : "Email not available",
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.black54,
@@ -173,7 +303,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
               subtitle: Text(
-                profileInfo.address,
+                currentProfileInfo.address.isNotEmpty ? currentProfileInfo.address : "Address not available",
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.black54,

@@ -1,8 +1,13 @@
+import 'package:UNISTOCK/ProfileInfo.dart';
 import 'package:flutter/material.dart';
 import 'package:UNISTOCK/pages/CartPage.dart';
 import 'package:UNISTOCK/pages/CheckoutPage.dart';
 
 class ProwareShirtsPage extends StatefulWidget {
+  final ProfileInfo currentProfileInfo; // Ensure this parameter is defined
+
+  ProwareShirtsPage({required this.currentProfileInfo}); // Required parameter in constructor
+
   @override
   _ProwareShirtsPageState createState() => _ProwareShirtsPageState();
 }
@@ -141,7 +146,7 @@ class _ProwareShirtsPageState extends State<ProwareShirtsPage> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: List.generate(
                           1,
-                          (index) => buildPageIndicator(index),
+                              (index) => buildPageIndicator(index),
                         ),
                       ),
                     ),
@@ -203,8 +208,9 @@ class _ProwareShirtsPageState extends State<ProwareShirtsPage> {
                               imagePath: selectedShirtType == 'College'
                                   ? collegeShirtImage
                                   : shsShirtImage,
-                              price: 195, // Add price here if needed
-                              quantity: 1, // Default quantity
+                              price: 195,
+                              quantity: 1,
+                              currentProfileInfo: widget.currentProfileInfo, // Pass the profile info
                             ),
                           ),
                         );
@@ -233,7 +239,7 @@ class _ProwareShirtsPageState extends State<ProwareShirtsPage> {
                     },
                     style: ElevatedButton.styleFrom(
                       padding:
-                          EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                      EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                       backgroundColor: Colors.blue,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
@@ -256,7 +262,7 @@ class _ProwareShirtsPageState extends State<ProwareShirtsPage> {
                     },
                     style: OutlinedButton.styleFrom(
                       padding:
-                          EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                      EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                       side: BorderSide(color: Colors.blue, width: 2),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),

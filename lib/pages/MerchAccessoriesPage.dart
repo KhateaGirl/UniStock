@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:UNISTOCK/pages/CartPage.dart';
 import 'package:UNISTOCK/pages/DetailSelection.dart';
+import 'package:UNISTOCK/ProfileInfo.dart'; // Import the ProfileInfo class
 
 class MerchAccessoriesPage extends StatefulWidget {
+  final ProfileInfo currentProfileInfo;
+
+  MerchAccessoriesPage({required this.currentProfileInfo});
+
   @override
   _MerchAccessoriesPageState createState() => _MerchAccessoriesPageState();
 }
@@ -124,11 +129,13 @@ class _MerchAccessoriesPageState extends State<MerchAccessoriesPage> {
                   PopupMenuButton<String>(
                     icon: Icon(Icons.sort),
                     onSelected: (String result) {
-                      selectedSortOption = result;
-                      sortItems(result);
+                      setState(() {
+                        selectedSortOption = result;
+                        sortItems(result);
+                      });
                     },
                     itemBuilder: (BuildContext context) =>
-                        <PopupMenuEntry<String>>[
+                    <PopupMenuEntry<String>>[
                       const PopupMenuItem<String>(
                         value: 'Sort by price ascending',
                         child: Text('Sort by price ascending'),
@@ -136,10 +143,6 @@ class _MerchAccessoriesPageState extends State<MerchAccessoriesPage> {
                       const PopupMenuItem<String>(
                         value: 'Sort by price descending',
                         child: Text('Sort by price descending'),
-                      ),
-                      const PopupMenuItem<String>(
-                        value: 'Sort by date',
-                        child: Text('Sort by date'),
                       ),
                     ],
                   ),
@@ -155,101 +158,69 @@ class _MerchAccessoriesPageState extends State<MerchAccessoriesPage> {
   }
 
   Widget buildItemGrid(BuildContext context) {
-    List<Widget> itemRows = [];
-    for (int i = 0; i < items.length; i += 2) {
-      itemRows.add(buildItemRow(
-        context,
-        items[i]['imagePath'],
-        items[i]['label'],
-        items[i]['price'],
-        i + 1 < items.length ? items[i + 1]['imagePath'] : '',
-        i + 1 < items.length ? items[i + 1]['label'] : '',
-        i + 1 < items.length ? items[i + 1]['price'] : 0,
-      ));
-    }
-    return Column(children: itemRows);
-  }
-
-  Widget buildItemRow(BuildContext context, String imagePath1, String label1,
-      int price1, String imagePath2, String label2, int price2) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        buildItemList(context, imagePath1, label1, price1),
-        if (imagePath2.isNotEmpty)
-          buildItemList(context, imagePath2, label2, price2),
-      ],
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: NeverScrollableScrollPhysics(),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 16.0,
+        mainAxisSpacing: 16.0,
+      ),
+      itemCount: items.length,
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return buildItemCard(context, item['imagePath'], item['label'], item['price']);
+      },
     );
   }
 
-  Widget buildItemList(
-      BuildContext context, String imagePath, String label, int price) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => DetailSelection(
-                itemLabel: label,
-                itemSize: '', // Default size or adjust as needed
-                imagePath: imagePath,
-                price: price,
-                quantity: 1, // Default quantity
-              ),
+  Widget buildItemCard(BuildContext context, String imagePath, String label, int price) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DetailSelection(
+              itemLabel: label,
+              itemSize: '', // Default size or adjust as needed
+              imagePath: imagePath,
+              price: price,
+              quantity: 1,
+              currentProfileInfo: widget.currentProfileInfo, // Pass the profile info
             ),
-          );
-        },
-        child: Card(
-          margin: EdgeInsets.all(8.0),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => DetailSelection(
-                      itemLabel: label,
-                      itemSize: '', // Default size or adjust as needed
-                      imagePath: imagePath,
-                      price: price,
-                      quantity: 1, // Default quantity
-                    ),
-                  ),
-                );
-              },
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      imagePath,
-                      width: MediaQuery.of(context).size.width * 0.4,
-                      height: MediaQuery.of(context).size.width * 0.4,
-                      fit: BoxFit.cover,
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      '₱$price',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ],
+          ),
+        );
+      },
+      child: Card(
+        margin: EdgeInsets.all(8.0),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Image.asset(
+                imagePath,
+                width: MediaQuery.of(context).size.width * 0.4,
+                height: MediaQuery.of(context).size.width * 0.4,
+                fit: BoxFit.cover,
+              ),
+              SizedBox(height: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ),
+              SizedBox(height: 8),
+              Text(
+                '₱$price',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.black,
+                ),
+              ),
+            ],
           ),
         ),
       ),
