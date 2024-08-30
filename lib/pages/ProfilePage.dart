@@ -43,7 +43,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
       if (userDoc.exists) {
         setState(() {
-          _imageUrl = userDoc['imageUrl'] as String?; // Fetch image URL from Firestore
+          _imageUrl = userDoc['imageUrl'] as String?;
         });
       }
     }
@@ -63,9 +63,10 @@ class _ProfilePageState extends State<ProfilePage> {
           orders = orderSnapshot.docs.map((doc) {
             final data = doc.data() as Map<String, dynamic>;
             return UNISTOCKOrder.Order(
-              itemName: data['itemLabel'] ?? '', // Use the field names that match your Firestore data
+              itemName: data['itemLabel'] ?? '',
               quantity: data['quantity'] ?? 0,
               price: data['price'] ?? 0,
+              orderDate: data['orderDate'] ?? 'No date',
             );
           }).toList();
         });
@@ -84,7 +85,7 @@ class _ProfilePageState extends State<ProfilePage> {
       setState(() {
         _imageFile = File(pickedFile.path);
       });
-      _uploadImageToStorage(); // Upload the image to Firebase Storage
+      _uploadImageToStorage();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('No image selected.')),
@@ -135,7 +136,7 @@ class _ProfilePageState extends State<ProfilePage> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => UNISTOCKOrder.OrdersPage(orders: orders!),
+          builder: (context) => UNISTOCKOrder.OrdersPage(),
         ),
       );
     }
@@ -154,7 +155,6 @@ class _ProfilePageState extends State<ProfilePage> {
         currentProfileInfo = result;
       });
 
-      // Save the updated profile information back to Firestore
       User? currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser != null) {
         try {

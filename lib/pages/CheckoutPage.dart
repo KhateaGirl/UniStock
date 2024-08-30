@@ -15,7 +15,6 @@ class CheckoutPage extends StatelessWidget {
   final int quantity;
   final ProfileInfo currentProfileInfo;
 
-  // Add a NotificationService instance
   final NotificationService notificationService = NotificationService();
 
   CheckoutPage({
@@ -75,8 +74,8 @@ class CheckoutPage extends StatelessWidget {
                   'orderDate': FieldValue.serverTimestamp(),
                 });
 
-                // Show notification after successful checkout
                 await notificationService.showNotification(
+                  currentProfileInfo.userId,
                   0,
                   'Order Placed',
                   'Your order for $itemLabel has been successfully placed!',

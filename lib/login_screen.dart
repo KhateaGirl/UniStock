@@ -60,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
               TextField(
                 controller: _studentIdController,
                 decoration: InputDecoration(
-                  labelText: 'Student ID',
+                  labelText: 'Email',
                   labelStyle: TextStyle(color: Colors.white),
                   filled: true,
                   fillColor: Colors.white.withOpacity(0.2),
@@ -70,7 +70,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 style: TextStyle(color: Colors.white),
-                keyboardType: TextInputType.number,
               ),
               SizedBox(height: 20),
               TextField(
