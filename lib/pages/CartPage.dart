@@ -40,11 +40,29 @@ class _CartPageState extends State<CartPage> {
       cartItemsSubscription = cartItemsStream.listen((items) {
         if (mounted) {
           setState(() {
-            cartItems = items;
+            // Group items by itemLabel
+            Map<String, CartItem> groupedItems = {};
+
+            for (var item in items) {
+              if (groupedItems.containsKey(item.itemLabel)) {
+                // Add quantity to the existing item
+                groupedItems[item.itemLabel]!.quantity += item.quantity;
+              } else {
+                // Add new item to the map
+                groupedItems[item.itemLabel] = item;
+              }
+            }
+
+            cartItems = groupedItems.values.toList();
+
             if (selectAll) {
-              selectedItems = cartItems.map((item) => item.itemLabel.hashCode).toSet();
+              selectedItems =
+                  cartItems.map((item) => item.itemLabel.hashCode).toSet();
             } else {
-              selectedItems = cartItems.where((item) => item.selected).map((item) => item.itemLabel.hashCode).toSet();
+              selectedItems = cartItems
+                  .where((item) => item.selected)
+                  .map((item) => item.itemLabel.hashCode)
+                  .toSet();
             }
           });
         }
@@ -60,28 +78,66 @@ class _CartPageState extends State<CartPage> {
     super.dispose();
   }
 
-  Future<void> updateCartItemQuantity(String docId, int change) async {
+  Future<void> updateCartItemQuantity(String itemLabel, int change) async {
     final FirebaseAuth auth = FirebaseAuth.instance;
     final FirebaseFirestore firestore = FirebaseFirestore.instance;
     final User? user = auth.currentUser;
 
     if (user != null) {
-      final docRef = firestore.collection('users').doc(user.uid).collection('cart').doc(docId);
+      // Get all cart items with the same itemLabel
+      final cartDocs = await firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('cart')
+          .where('itemLabel', isEqualTo: itemLabel)
+          .get();
 
-      final snapshot = await docRef.get();
-      if (snapshot.exists) {
-        final currentQuantity = snapshot['quantity'] as int;
-        final newQuantity = currentQuantity + change;
+      int totalQuantity =
+      cartDocs.docs.fold(0, (sum, doc) => sum + (doc['quantity'] as int));
 
-        if (newQuantity > 0) {
-          await docRef.update({'quantity': newQuantity});
-        } else {
-          await docRef.delete();
+      // Calculate new quantity
+      totalQuantity += change;
+
+      if (totalQuantity > 0) {
+        // Update the first document's quantity to the new total
+        await firestore
+            .collection('users')
+            .doc(user.uid)
+            .collection('cart')
+            .doc(cartDocs.docs[0].id)
+            .update({'quantity': totalQuantity});
+
+        // Delete all other documents
+        for (var i = 1; i < cartDocs.docs.length; i++) {
+          await firestore
+              .collection('users')
+              .doc(user.uid)
+              .collection('cart')
+              .doc(cartDocs.docs[i].id)
+              .delete();
         }
 
-        // Update the local state
+        // Update local state
         setState(() {
-          cartItems = cartItems.where((item) => item.id != docId || newQuantity > 0).toList();
+          cartItems = cartItems
+              .where((item) => item.itemLabel != itemLabel || totalQuantity > 0)
+              .toList();
+        });
+      } else {
+        // Delete all documents if quantity is zero or less
+        for (var doc in cartDocs.docs) {
+          await firestore
+              .collection('users')
+              .doc(user.uid)
+              .collection('cart')
+              .doc(doc.id)
+              .delete();
+        }
+
+        // Update local state
+        setState(() {
+          cartItems =
+              cartItems.where((item) => item.itemLabel != itemLabel).toList();
         });
       }
     }
@@ -93,7 +149,8 @@ class _CartPageState extends State<CartPage> {
     final User? user = auth.currentUser;
 
     if (user != null) {
-      final docRef = firestore.collection('users').doc(user.uid).collection('cart').doc(docId);
+      final docRef =
+      firestore.collection('users').doc(user.uid).collection('cart').doc(docId);
 
       await docRef.update({'selected': selected});
     }
@@ -112,8 +169,8 @@ class _CartPageState extends State<CartPage> {
     }
   }
 
-  void handleQuantityChanged(String docId, int change) async {
-    await updateCartItemQuantity(docId, change);
+  void handleQuantityChanged(String itemLabel, int change) async {
+    await updateCartItemQuantity(itemLabel, change);
   }
 
   void handleSelectAllChanged(bool? value) {
@@ -177,15 +234,11 @@ class _CartPageState extends State<CartPage> {
     final User? user = auth.currentUser;
 
     if (user != null) {
-      final cartCollection = firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('cart');
+      final cartCollection =
+      firestore.collection('users').doc(user.uid).collection('cart');
 
-      final ordersCollection = firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('orders');
+      final ordersCollection =
+      firestore.collection('users').doc(user.uid).collection('orders');
 
       final WriteBatch batch = firestore.batch();
 
@@ -361,7 +414,7 @@ class _CartPageState extends State<CartPage> {
                             icon: Icon(Icons.remove),
                             onPressed: item.quantity > 1
                                 ? () {
-                              handleQuantityChanged(item.id, -1);
+                              handleQuantityChanged(item.itemLabel, -1);
                             }
                                 : null,
                           ),
@@ -369,7 +422,7 @@ class _CartPageState extends State<CartPage> {
                           IconButton(
                             icon: Icon(Icons.add),
                             onPressed: () {
-                              handleQuantityChanged(item.id, 1);
+                              handleQuantityChanged(item.itemLabel, 1);
                             },
                           ),
                         ],
