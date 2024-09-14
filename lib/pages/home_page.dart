@@ -1,9 +1,8 @@
-import 'package:UNISTOCK/ProfileInfo.dart';
 import 'package:flutter/material.dart';
-import 'package:carousel_slider/carousel_slider.dart';
 import 'package:dots_indicator/dots_indicator.dart';
 import 'package:UNISTOCK/pages/CartPage.dart';
 import 'package:UNISTOCK/pages/NotificationPage.dart';
+import 'package:UNISTOCK/ProfileInfo.dart';
 
 class HomePage extends StatefulWidget {
   final ProfileInfo profileInfo;
@@ -21,7 +20,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _currentIndex = 0;
+  int _currentIndex = 0;  // Keep track of the current index for PageView
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +54,6 @@ class _HomePageState extends State<HomePage> {
                   builder: (context) => NotificationsPage(userId: widget.profileInfo.userId),
                 ),
               );
-
             },
           ),
           IconButton(
@@ -77,25 +75,27 @@ class _HomePageState extends State<HomePage> {
                 padding: const EdgeInsets.symmetric(vertical: 16.0),
                 child: Column(
                   children: [
-                    CarouselSlider(
-                      options: CarouselOptions(
-                        autoPlay: true,
-                        aspectRatio: 2.0,
-                        enlargeCenterPage: true,
-                        onPageChanged: (index, reason) {
+                    Container(
+                      height: 200,  // Adjust height as needed
+                      child: PageView.builder(
+                        onPageChanged: (index) {
                           setState(() {
-                            _currentIndex = index;
+                            _currentIndex = index;  // Update current index when the page changes
                           });
                         },
+                        itemCount: widget.imagePaths.length,
+                        itemBuilder: (context, index) {
+                          return Container(
+                            child: Center(
+                              child: Image.asset(
+                                widget.imagePaths[index],
+                                fit: BoxFit.cover,
+                                width: 1000,
+                              ),
+                            ),
+                          );
+                        },
                       ),
-                      items: widget.imagePaths
-                          .map((item) => Container(
-                        child: Center(
-                          child: Image.asset(item,
-                              fit: BoxFit.cover, width: 1000),
-                        ),
-                      ))
-                          .toList(),
                     ),
                     DotsIndicator(
                       dotsCount: widget.imagePaths.length,
@@ -111,7 +111,6 @@ class _HomePageState extends State<HomePage> {
                       thickness: 1,
                     ),
                     SizedBox(height: 16),
-                    // Placeholder for announcements and restrictions
                     Container(
                       width: double.infinity,
                       height: 150,
