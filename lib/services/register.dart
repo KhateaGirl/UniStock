@@ -1,3 +1,4 @@
+import 'package:UNISTOCK/login_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -188,8 +189,8 @@ class _RegisterPageState extends State<RegisterPage> {
                 },
               );
             } else {
-              // Firebase Registration Logic
               try {
+                // Firebase Registration Logic
                 UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
                   email: email.text,
                   password: password.text,
@@ -197,6 +198,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
                 // Save additional user information in Firestore
                 await _firestore.collection('users').doc(userCredential.user!.uid).set({
+                  'userId': userCredential.user!.uid,  // Save userId in Firestore
                   'name': name.text,
                   'email': email.text,
                   'createdAt': Timestamp.now(),
@@ -213,6 +215,10 @@ class _RegisterPageState extends State<RegisterPage> {
                         TextButton(
                           onPressed: () {
                             Navigator.of(context).pop();
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(builder: (context) => LoginScreen()),
+                            );
                           },
                           child: const Text('OK'),
                         ),
