@@ -27,16 +27,48 @@ class DetailSelection extends StatefulWidget {
 class _DetailSelectionState extends State<DetailSelection> {
   int _currentQuantity = 1;
   String _selectedSize = '';
+  List<String> availableSizes = []; // List to store available sizes
 
   @override
   void initState() {
     super.initState();
-
-    // Debugging statement to check the initial value of quantity
-    print("Initial quantity: ${widget.quantity}");
-
     _currentQuantity = widget.quantity; // Initialize _currentQuantity with the quantity parameter
     _selectedSize = widget.itemSize ?? ''; // Initialize _selectedSize with itemSize or default to empty string
+
+    // Fetch sizes dynamically from Firestore
+    _fetchSizesFromFirestore();
+  }
+
+  // Fetch available sizes from Firestore (later you will store sizes in the Firestore)
+  Future<void> _fetchSizesFromFirestore() async {
+    try {
+      // This is a placeholder for where you would fetch the sizes from Firestore
+      // Example Firestore structure: sizes stored as a nested field in each item document
+      DocumentSnapshot doc = await FirebaseFirestore.instance
+          .collection('Inventory_stock')
+          .doc('senior_high_items')
+          .collection('Items')
+          .doc(widget.itemLabel) // Assuming sizes are in the same document as the item
+          .get();
+
+      if (doc.exists && doc['sizes'] != null) {
+        List<dynamic> fetchedSizes = doc['sizes']; // Assuming 'sizes' is a List field in Firestore
+        setState(() {
+          availableSizes = List<String>.from(fetchedSizes); // Convert to a List<String>
+        });
+      } else {
+        // Fallback to default hardcoded sizes if sizes not found or not implemented yet
+        setState(() {
+          availableSizes = ['S', 'M', 'L', 'XL', '2XL', '3XL'];
+        });
+      }
+    } catch (e) {
+      print('Error fetching sizes: $e');
+      // Fallback to hardcoded sizes in case of error
+      setState(() {
+        availableSizes = ['S', 'M', 'L', 'XL', '2XL', '3XL'];
+      });
+    }
   }
 
   bool get showSizeOptions => widget.itemSize != null;
@@ -130,7 +162,7 @@ class _DetailSelectionState extends State<DetailSelection> {
         ),
         centerTitle: true,
       ),
-      body: Center(
+      body: SingleChildScrollView( // Wrap everything inside SingleChildScrollView
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -154,11 +186,14 @@ class _DetailSelectionState extends State<DetailSelection> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(10),
-                    child: Image.asset(
-                      widget.imagePath,
+                    child: Image.network(
+                      widget.imagePath, // Use Image.network() here
                       width: MediaQuery.of(context).size.width,
                       height: MediaQuery.of(context).size.width * 0.8,
                       fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Icon(Icons.error); // Show error icon if the image fails to load
+                      },
                     ),
                   ),
                 ),
@@ -192,61 +227,54 @@ class _DetailSelectionState extends State<DetailSelection> {
                   ],
                 ),
               ),
-              Expanded(
-                child: Align(
-                  alignment: Alignment.bottomRight,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        SizedBox(
-                          width: 120,
-                          child: ElevatedButton(
-                            onPressed: handleCheckout,
-                            style: ElevatedButton.styleFrom(
-                              padding: EdgeInsets.symmetric(vertical: 15),
-                              backgroundColor: Color(0xFFFFEB3B),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                            ),
-                            child: Text(
-                              'Checkout',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: const Color.fromARGB(255, 31, 31, 31),
-                              ),
-                            ),
-                          ),
+              SizedBox(height: 20), // Add some spacing here
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  SizedBox(
+                    width: 120,
+                    child: ElevatedButton(
+                      onPressed: handleCheckout,
+                      style: ElevatedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(vertical: 15),
+                        backgroundColor: Color(0xFFFFEB3B),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                        SizedBox(width: 10),
-                        SizedBox(
-                          width: 120,
-                          child: OutlinedButton(
-                            onPressed: handleAddToCart,
-                            style: OutlinedButton.styleFrom(
-                              padding: EdgeInsets.symmetric(vertical: 15),
-                              side: BorderSide(color: Colors.blue, width: 2),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                            ),
-                            child: Text(
-                              'Add to Cart',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blue,
-                              ),
-                            ),
-                          ),
+                      ),
+                      child: Text(
+                        'Checkout',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: const Color.fromARGB(255, 31, 31, 31),
                         ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
+                  SizedBox(width: 10),
+                  SizedBox(
+                    width: 120,
+                    child: OutlinedButton(
+                      onPressed: handleAddToCart,
+                      style: OutlinedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(vertical: 15),
+                        side: BorderSide(color: Colors.blue, width: 2),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      child: Text(
+                        'Add to Cart',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -262,8 +290,8 @@ class _DetailSelectionState extends State<DetailSelection> {
         return Dialog(
           child: ClipRRect(
             borderRadius: BorderRadius.circular(10),
-            child: Image.asset(
-              widget.imagePath,
+            child: Image.network(
+              widget.imagePath, // Use Image.network() here
               width: MediaQuery.of(context).size.width * 0.8,
               height: MediaQuery.of(context).size.width * 0.8,
               fit: BoxFit.cover,
@@ -275,7 +303,6 @@ class _DetailSelectionState extends State<DetailSelection> {
   }
 
   Widget _buildSizeSelector() {
-    List<String> sizes = ['S', 'M', 'L', 'XL', '2XL', '3XL'];
     return Container(
       padding: EdgeInsets.symmetric(vertical: 5),
       child: Column(
@@ -291,7 +318,7 @@ class _DetailSelectionState extends State<DetailSelection> {
           SizedBox(height: 5),
           Wrap(
             spacing: 8.0,
-            children: sizes.map((size) {
+            children: availableSizes.map((size) {
               bool isSelected = size == _selectedSize;
               return GestureDetector(
                 onTap: () {
