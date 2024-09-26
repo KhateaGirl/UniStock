@@ -50,7 +50,6 @@ class _ProwareShirtsPageState extends State<ProwareShirtsPage> {
         },
       );
     } else {
-      // Show an alert dialog to prompt size selection
       showDialog(
         context: context,
         builder: (BuildContext context) {

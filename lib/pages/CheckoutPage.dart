@@ -153,10 +153,25 @@ class CheckoutPage extends StatelessWidget {
                   height: 100,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10),
-                    image: DecorationImage(
-                      image: NetworkImage(imagePath),
-                      fit: BoxFit.cover,
-                    ),
+                  ),
+                  child: Image.network(
+                    imagePath,
+                    fit: BoxFit.cover,
+                    errorBuilder: (BuildContext context, Object error, StackTrace? stackTrace) {
+                      return Center(
+                        child: Icon(Icons.error, size: 50, color: Colors.red), // Show error icon if image fails to load
+                      );
+                    },
+                    loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded / (loadingProgress.expectedTotalBytes ?? 1)
+                              : null,
+                        ),
+                      );
+                    },
                   ),
                 ),
                 SizedBox(width: 20),
@@ -181,7 +196,7 @@ class CheckoutPage extends StatelessWidget {
                       ),
                       SizedBox(height: 5),
                       Text(
-                        'Price: \₱$price',
+                        'Price: ₱$price',
                         style: TextStyle(
                           fontSize: 16,
                         ),
@@ -213,7 +228,6 @@ class CheckoutPage extends StatelessWidget {
   }
 }
 
-
 class PurchaseSummaryPage extends StatelessWidget {
   final String itemLabel;
   final String itemSize;
@@ -235,7 +249,7 @@ class PurchaseSummaryPage extends StatelessWidget {
     try {
       CollectionReference orders = FirebaseFirestore.instance
           .collection('users')
-          .doc(currentProfileInfo.userId) // Make sure to use userId
+          .doc(currentProfileInfo.userId)
           .collection('orders');
 
       await orders.add({
@@ -285,7 +299,9 @@ class PurchaseSummaryPage extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10),
                     image: DecorationImage(
-                      image: NetworkImage(imagePath),
+                      image: imagePath.isNotEmpty
+                          ? NetworkImage(imagePath)
+                          : AssetImage('assets/icons/default_icon.png') as ImageProvider, // Fallback icon
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -310,7 +326,7 @@ class PurchaseSummaryPage extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'Price: \₱$price',
+                        'Price: ₱$price',
                         style: TextStyle(
                           fontSize: 16,
                         ),
@@ -322,7 +338,7 @@ class PurchaseSummaryPage extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'Total: \₱$totalCost', // Display the total cost
+                        'Total: ₱$totalCost',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -336,7 +352,7 @@ class PurchaseSummaryPage extends StatelessWidget {
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: () async {
-                await _saveOrderToFirestore(); // Save the order to Firestore
+                await _saveOrderToFirestore();
 
                 Navigator.pushReplacement(
                   context,
@@ -386,7 +402,8 @@ class PurchaseSummaryPage extends StatelessWidget {
                             }
                           },
                         ],
-                      )),
+                      )
+                  ),
                 );
               },
               child: Text('Back to Home'),
