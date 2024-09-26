@@ -1,19 +1,19 @@
 import 'package:UNISTOCK/ProfileInfo.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:UNISTOCK/pages/CheckoutPage.dart'; // Adjust the import path as necessary
+import 'package:UNISTOCK/pages/CheckoutPage.dart';
 
 class DetailSelection extends StatefulWidget {
   final String itemLabel;
   final String? itemSize; // Nullable String for itemSize
   final String imagePath;
-  final int price;
+  final int price; // Keep price as int
   final int quantity;
   final ProfileInfo currentProfileInfo;
 
   DetailSelection({
     required this.itemLabel,
-    this.itemSize, // Nullable String
+    this.itemSize,
     required this.imagePath,
     required this.price,
     required this.quantity,
@@ -39,32 +39,29 @@ class _DetailSelectionState extends State<DetailSelection> {
     _fetchSizesFromFirestore();
   }
 
-  // Fetch available sizes from Firestore (later you will store sizes in the Firestore)
+  // Fetch available sizes from Firestore
   Future<void> _fetchSizesFromFirestore() async {
     try {
-      // This is a placeholder for where you would fetch the sizes from Firestore
-      // Example Firestore structure: sizes stored as a nested field in each item document
       DocumentSnapshot doc = await FirebaseFirestore.instance
           .collection('Inventory_stock')
           .doc('senior_high_items')
           .collection('Items')
-          .doc(widget.itemLabel) // Assuming sizes are in the same document as the item
+          .doc(widget.itemLabel)
           .get();
 
       if (doc.exists && doc['sizes'] != null) {
-        List<dynamic> fetchedSizes = doc['sizes']; // Assuming 'sizes' is a List field in Firestore
+        List<dynamic> fetchedSizes = doc['sizes'];
         setState(() {
-          availableSizes = List<String>.from(fetchedSizes); // Convert to a List<String>
+          availableSizes = List<String>.from(fetchedSizes);
         });
       } else {
-        // Fallback to default hardcoded sizes if sizes not found or not implemented yet
+        // Fallback to default hardcoded sizes
         setState(() {
           availableSizes = ['S', 'M', 'L', 'XL', '2XL', '3XL'];
         });
       }
     } catch (e) {
       print('Error fetching sizes: $e');
-      // Fallback to hardcoded sizes in case of error
       setState(() {
         availableSizes = ['S', 'M', 'L', 'XL', '2XL', '3XL'];
       });
@@ -106,7 +103,7 @@ class _DetailSelectionState extends State<DetailSelection> {
             imagePath: widget.imagePath,
             price: widget.price,
             quantity: _currentQuantity,
-            currentProfileInfo: widget.currentProfileInfo, // Pass the correct profile info here
+            currentProfileInfo: widget.currentProfileInfo,
           ),
         ),
       );
@@ -129,7 +126,7 @@ class _DetailSelectionState extends State<DetailSelection> {
         'itemSize': showSizeOptions ? _selectedSize : null,
         'imagePath': widget.imagePath,
         'price': widget.price,
-        'quantity': _currentQuantity, // Make sure quantity is correctly set
+        'quantity': _currentQuantity,
         'status': 'pending',
         'timestamp': FieldValue.serverTimestamp(),
       });
@@ -144,135 +141,46 @@ class _DetailSelectionState extends State<DetailSelection> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color(0xFF046be0),
-        title: RichText(
-          textAlign: TextAlign.center,
-          text: TextSpan(
-            style: TextStyle(
-              fontSize: 24.0,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Arial',
-              color: Colors.white,
-            ),
-            children: <TextSpan>[
-              TextSpan(text: 'UNI'),
-              TextSpan(text: 'STOCK', style: TextStyle(color: Colors.yellow)),
-            ],
-          ),
-        ),
-        centerTitle: true,
+        title: Text(widget.itemLabel),
       ),
-      body: SingleChildScrollView( // Wrap everything inside SingleChildScrollView
+      body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              GestureDetector(
-                onTap: () {
-                  _showFullImage(context);
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.5),
-                        spreadRadius: 2,
-                        blurRadius: 5,
-                        offset: Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.network(
-                      widget.imagePath, // Use Image.network() here
-                      width: MediaQuery.of(context).size.width,
-                      height: MediaQuery.of(context).size.width * 0.8,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Icon(Icons.error); // Show error icon if the image fails to load
-                      },
-                    ),
-                  ),
-                ),
+              Image.network(
+                widget.imagePath,
+                height: 300,
+                fit: BoxFit.cover,
               ),
-              Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.itemLabel,
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    if (showSizeOptions) ...[
-                      SizedBox(height: 10),
-                      _buildSizeSelector(),
-                    ],
-                    SizedBox(height: 10),
-                    Text(
-                      'Price: ₱${widget.price}',
-                      style: TextStyle(
-                        fontSize: 20,
-                        color: Colors.grey[700],
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    _buildQuantitySelector(),
-                  ],
-                ),
+              SizedBox(height: 16),
+              Text(
+                widget.itemLabel,
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
-              SizedBox(height: 20), // Add some spacing here
+              if (showSizeOptions) ...[
+                SizedBox(height: 10),
+                _buildSizeSelector(),
+              ],
+              SizedBox(height: 10),
+              Text(
+                'Price: ₱${widget.price}', // Keep it as int
+                style: TextStyle(fontSize: 20),
+              ),
+              _buildQuantitySelector(),
+              SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  SizedBox(
-                    width: 120,
-                    child: ElevatedButton(
-                      onPressed: handleCheckout,
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(vertical: 15),
-                        backgroundColor: Color(0xFFFFEB3B),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                      child: Text(
-                        'Checkout',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: const Color.fromARGB(255, 31, 31, 31),
-                        ),
-                      ),
-                    ),
+                  ElevatedButton(
+                    onPressed: handleCheckout,
+                    child: Text('Checkout'),
                   ),
                   SizedBox(width: 10),
-                  SizedBox(
-                    width: 120,
-                    child: OutlinedButton(
-                      onPressed: handleAddToCart,
-                      style: OutlinedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(vertical: 15),
-                        side: BorderSide(color: Colors.blue, width: 2),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                      child: Text(
-                        'Add to Cart',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue,
-                        ),
-                      ),
-                    ),
+                  OutlinedButton(
+                    onPressed: handleAddToCart,
+                    child: Text('Add to Cart'),
                   ),
                 ],
               ),
@@ -283,101 +191,39 @@ class _DetailSelectionState extends State<DetailSelection> {
     );
   }
 
-  void _showFullImage(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Image.network(
-              widget.imagePath, // Use Image.network() here
-              width: MediaQuery.of(context).size.width * 0.8,
-              height: MediaQuery.of(context).size.width * 0.8,
-              fit: BoxFit.cover,
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   Widget _buildSizeSelector() {
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: 5),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Size:',
-            style: TextStyle(
-              fontSize: 20,
-              color: Colors.grey[700],
-            ),
-          ),
-          SizedBox(height: 5),
-          Wrap(
-            spacing: 8.0,
-            children: availableSizes.map((size) {
-              bool isSelected = size == _selectedSize;
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _selectedSize = size;
-                  });
-                },
-                child: Container(
-                  padding: EdgeInsets.all(8.0),
-                  decoration: BoxDecoration(
-                    color: isSelected ? Colors.blue : Colors.blue[50],
-                    border: Border.all(color: Colors.blue, width: 2),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    size,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: isSelected ? Colors.white : Colors.blue,
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ],
-      ),
+    return DropdownButton<String>(
+      value: _selectedSize.isEmpty ? null : _selectedSize,
+      hint: Text('Select Size'),
+      items: availableSizes.map((size) {
+        return DropdownMenuItem(
+          value: size,
+          child: Text(size),
+        );
+      }).toList(),
+      onChanged: (value) {
+        setState(() {
+          _selectedSize = value ?? '';
+        });
+      },
     );
   }
 
   Widget _buildQuantitySelector() {
     return Row(
       children: [
-        Text(
-          'Quantity:',
-          style: TextStyle(
-            fontSize: 20,
-            color: Colors.grey[700],
-          ),
-        ),
-        SizedBox(width: 10),
+        Text('Quantity:'),
         IconButton(
-          onPressed: () {
+          onPressed: _currentQuantity > 1
+              ? () {
             setState(() {
-              if (_currentQuantity > 1) {
-                _currentQuantity--;
-              }
+              _currentQuantity--;
             });
-          },
+          }
+              : null,
           icon: Icon(Icons.remove),
         ),
-        Text(
-          '$_currentQuantity',
-          style: TextStyle(
-            fontSize: 20,
-            color: Colors.grey[700],
-          ),
-        ),
+        Text('$_currentQuantity'),
         IconButton(
           onPressed: () {
             setState(() {

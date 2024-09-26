@@ -1,7 +1,8 @@
 import 'package:UNISTOCK/ProfileInfo.dart';
-import 'package:flutter/material.dart';
-import 'package:UNISTOCK/pages/DetailSelection.dart';
 import 'package:UNISTOCK/pages/CartPage.dart';
+import 'package:UNISTOCK/pages/DetailSelection.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 
 class CollegeUniSelectionPage extends StatefulWidget {
   final String courseLabel;
@@ -20,194 +21,43 @@ class CollegeUniSelectionPage extends StatefulWidget {
 class _CollegeUniSelectionPageState extends State<CollegeUniSelectionPage> {
   String selectedSortOption = 'Sort by';
   List<Map<String, dynamic>> uniformItems = [];
+  bool _isLoading = true; // To indicate loading data
 
   @override
   void initState() {
     super.initState();
-    uniformItems = getUniformItems();
+    fetchUniformItems(); // Fetch items from Firestore
   }
 
-  List<Map<String, dynamic>> getUniformItems() {
-    switch (widget.courseLabel) {
-      case 'IT&CPE':
-        return [
-          {
-            'id': 'IT_BLAZER',
-            'imagePath': 'assets/images/IT_BLAZER.png',
-            'label': 'IT 3/4 Blouse',
-            'price': 1000
-          },
-          {
-            'id': 'IT_POLO',
-            'imagePath': 'assets/images/IT_POLO.png',
-            'label': 'IT 3/4 Polo',
-            'price': 800
-          },
-          {
-            'id': 'MALE_BLAZER',
-            'imagePath': 'assets/images/IT_BLAZER.png',
-            'label': 'Male Blazer',
-            'price': 1200
-          },
-          {
-            'id': 'FEMALE_BLAZER',
-            'imagePath': 'assets/images/IT_BLAZER.png',
-            'label': 'Female Blazer',
-            'price': 1200
-          },
-        ];
-      case 'HRM & Culinary':
-        return [
-          {
-            'id': 'BLOUSE',
-            'imagePath': 'assets/images/SHS_BLOUSE_WITH_VEST.png',
-            'label': 'Blouse',
-            'price': 950
-          },
-          {
-            'id': 'POLO',
-            'imagePath': 'assets/images/SHS_POLO_WITH_VEST.png',
-            'label': 'Polo',
-            'price': 850
-          },
-          {
-            'id': 'CHEF_POLO',
-            'imagePath': 'assets/images/STI_WHITE_CHEF_LONG_SLEEVE_BLOUSE.png',
-            'label': 'Chef\'s Polo',
-            'price': 1000
-          },
-          {
-            'id': 'CHEF_PANTS',
-            'imagePath': 'assets/images/STI_LONG_CHECKERED_PANTS.png',
-            'label': 'Chef Pants',
-            'price': 900
-          },
-          {
-            'id': 'VEST_FEMALE',
-            'imagePath': '',
-            'label': 'Vest Female',
-            'price': 0
-          },
-          {
-            'id': 'VEST_MALE',
-            'imagePath': '',
-            'label': 'Vest Male',
-            'price': 0
-          },
-        ];
-      case 'Tourism':
-        return [
-          {
-            'id': 'FEMALE_BLOUSE',
-            'imagePath': 'assets/images/SHS_BLOUSE_WITH_VEST.png',
-            'label': 'Female Blouse',
-            'price': 950
-          },
-          {
-            'id': 'MALE_POLO',
-            'imagePath': 'assets/images/SHS_POLO_WITH_VEST.png',
-            'label': 'Male Polo',
-            'price': 850
-          },
-          {
-            'id': 'FEMALE_BLAZER',
-            'imagePath': 'assets/images/IT_BLAZER.png',
-            'label': 'Female Blazer',
-            'price': 1200
-          },
-          {
-            'id': 'SKIRT',
-            'imagePath': 'assets/images/SHS_SKIRT.png',
-            'label': 'Skirt',
-            'price': 700
-          },
-          {
-            'id': 'CLOTH_PANTS',
-            'imagePath': 'assets/images/SHS_PANTS.png',
-            'label': 'Cloth Pants',
-            'price': 800
-          },
-          {
-            'id': 'TOURISM_BERET',
-            'imagePath': '',
-            'label': 'Tourism Beret',
-            'price': 0
-          },
-          {
-            'id': 'TOURISM_PIN',
-            'imagePath': '',
-            'label': 'Tourism Pin',
-            'price': 0
-          },
-          {
-            'id': 'NECKTIE',
-            'imagePath': 'assets/images/SHS_NECKTIE.png',
-            'label': 'Necktie',
-            'price': 300
-          },
-          {'id': 'SCARF', 'imagePath': '', 'label': 'Scarf', 'price': 0},
-        ];
-      case 'BM/AB COMM':
-        return [
-          {
-            'id': 'BLOUSE',
-            'imagePath': 'assets/images/SHS_BLOUSE_WITH_VEST.png',
-            'label': 'Blouse',
-            'price': 950
-          },
-          {
-            'id': 'POLO',
-            'imagePath': 'assets/images/SHS_POLO_WITH_VEST.png',
-            'label': 'Polo',
-            'price': 850
-          },
-          {
-            'id': 'BM_NECKTIE',
-            'imagePath': 'assets/images/SHS_NECKTIE.png',
-            'label': 'BM Necktie',
-            'price': 300
-          },
-          {'id': 'BM_SCARF', 'imagePath': '', 'label': 'BM Scarf', 'price': 0},
-          {
-            'id': 'AB_COMM_NECKTIE',
-            'imagePath': '',
-            'label': 'AB COMM Necktie',
-            'price': 0
-          },
-          {
-            'id': 'AB_COMM_SCARF',
-            'imagePath': '',
-            'label': 'AB COMM Scarf',
-            'price': 0
-          },
-        ];
-      case 'BACOMM':
-        return [
-          {
-            'id': 'BLOUSE',
-            'imagePath': 'assets/images/SHS_BLOUSE_WITH_VEST.png',
-            'label': 'Blouse',
-            'price': 950
-          },
-          {
-            'id': 'POLO',
-            'imagePath': 'assets/images/SHS_POLO_WITH_VEST.png',
-            'label': 'Polo',
-            'price': 850
-          },
-          {
-            'id': 'BM_NECKTIE',
-            'imagePath': 'assets/images/SHS_NECKTIE.png',
-            'label': 'BM Necktie',
-            'price': 300
-          },
-          {'id': 'BM_SCARF', 'imagePath': '', 'label': 'BM Scarf', 'price': 0},
-        ];
-      default:
-        return [];
+  // Fetch items from Firestore based on courseLabel
+  Future<void> fetchUniformItems() async {
+    try {
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('Inventory_stock')
+          .doc('college_items')
+          .collection(widget.courseLabel)
+          .get();
+
+      setState(() {
+        uniformItems = querySnapshot.docs.map((doc) {
+          return {
+            'id': doc.id,
+            'label': doc['label'],
+            'price': (doc['price'] is double) ? (doc['price'] as double).toInt() : (doc['price'] as int),
+            'imagePath': doc['imageUrl'] ?? '',
+          };
+        }).toList();
+        _isLoading = false; // Data loaded
+      });
+    } catch (e) {
+      print('Error fetching items: $e');
+      setState(() {
+        _isLoading = false; // Stop loading even on failure
+      });
     }
   }
 
+  // Sort items logic
   void sortItems(String sortBy) {
     setState(() {
       if (sortBy == 'Sort by price ascending') {
@@ -251,7 +101,9 @@ class _CollegeUniSelectionPageState extends State<CollegeUniSelectionPage> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -280,8 +132,7 @@ class _CollegeUniSelectionPageState extends State<CollegeUniSelectionPage> {
                         sortItems(result);
                       });
                     },
-                    itemBuilder: (BuildContext context) =>
-                        <PopupMenuEntry<String>>[
+                    itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
                       const PopupMenuItem<String>(
                         value: 'Sort by price ascending',
                         child: Text('Sort by price ascending'),
@@ -318,7 +169,6 @@ class _CollegeUniSelectionPageState extends State<CollegeUniSelectionPage> {
       itemBuilder: (context, index) {
         final item = uniformItems[index];
         if (item['imagePath'] == '' || item['price'] == 0) {
-          // Item is sold out or has no image
           return buildSoldOutItem();
         } else {
           return GestureDetector(
@@ -328,13 +178,11 @@ class _CollegeUniSelectionPageState extends State<CollegeUniSelectionPage> {
                 MaterialPageRoute(
                   builder: (context) => DetailSelection(
                     itemLabel: item['label'],
-                    itemSize: item[
-                        'size'], // Pass this if available, otherwise set it to null
+                    itemSize: item['size'], // Pass the size if applicable
                     imagePath: item['imagePath'],
-                    price: item['price'],
-                    quantity: item['quantity'] ?? 1,
-                    currentProfileInfo: widget.currentProfileInfo, // Pass the profile info
-// Default to 1 if quantity is not available
+                    price: item['price'], // Pass price as an integer
+                    quantity: 1, // Set default quantity to 1
+                    currentProfileInfo: widget.currentProfileInfo,
                   ),
                 ),
               );
@@ -344,7 +192,10 @@ class _CollegeUniSelectionPageState extends State<CollegeUniSelectionPage> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Expanded(
-                    child: Image.asset(item['imagePath'], fit: BoxFit.cover),
+                    child: Image.network(
+                      item['imagePath'],
+                      fit: BoxFit.cover,
+                    ),
                   ),
                   Text(
                     item['label'],
@@ -354,7 +205,7 @@ class _CollegeUniSelectionPageState extends State<CollegeUniSelectionPage> {
                     ),
                   ),
                   Text(
-                    '₱${item['price'].toStringAsFixed(2)}',
+                    '₱${item['price'].toString()}', // Display price as string
                     style: TextStyle(fontSize: 14),
                   ),
                 ],
@@ -369,7 +220,7 @@ class _CollegeUniSelectionPageState extends State<CollegeUniSelectionPage> {
   Widget buildSoldOutItem() {
     return GestureDetector(
       onTap: () {
-        // You can handle the tap on sold out items here if needed
+        // Handle tap on sold-out items
       },
       child: Card(
         color: Colors.grey[300],

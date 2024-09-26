@@ -154,7 +154,7 @@ class CheckoutPage extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10),
                     image: DecorationImage(
-                      image: AssetImage(imagePath),
+                      image: NetworkImage(imagePath),
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -181,7 +181,7 @@ class CheckoutPage extends StatelessWidget {
                       ),
                       SizedBox(height: 5),
                       Text(
-                        'Price: \$$price',
+                        'Price: \₱$price',
                         style: TextStyle(
                           fontSize: 16,
                         ),
@@ -285,7 +285,7 @@ class PurchaseSummaryPage extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10),
                     image: DecorationImage(
-                      image: AssetImage(imagePath),
+                      image: NetworkImage(imagePath),
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -310,7 +310,7 @@ class PurchaseSummaryPage extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'Price: \$$price',
+                        'Price: \₱$price',
                         style: TextStyle(
                           fontSize: 16,
                         ),
@@ -322,7 +322,7 @@ class PurchaseSummaryPage extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'Total: \$$totalCost', // Display the total cost
+                        'Total: \₱$totalCost', // Display the total cost
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
