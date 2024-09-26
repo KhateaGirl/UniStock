@@ -1,5 +1,6 @@
 import 'package:UNISTOCK/ProfileInfo.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:UNISTOCK/pages/CartPage.dart';
 import 'package:UNISTOCK/pages/DetailSelection.dart';
 
@@ -13,93 +14,50 @@ class SHSUniformsPage extends StatefulWidget {
 
 class _SHSUniformsPageState extends State<SHSUniformsPage> {
   String selectedSortOption = 'Sort by';
+  List<Map<String, dynamic>> items = [];
+  bool isLoading = true;
 
-  List<Map<String, dynamic>> items = [
-    {
-      'id': 'SHS_APRON',
-      'category': 'clothing',
-      'imagePath': 'assets/images/SHS_APRON.png',
-      'label': 'SHS APRON',
-      'price': 120,
-    },
-    {
-      'id': 'SHS_PANTS',
-      'category': 'clothing',
-      'imagePath': 'assets/images/SHS_PANTS.png',
-      'label': 'SHS PANTS',
-      'price': 200,
-    },
-    {
-      'id': 'SHS_NECKTIE',
-      'category': 'accessory',
-      'imagePath': 'assets/images/SHS_NECKTIE.png',
-      'label': 'SHS NECKTIE',
-      'price': 50,
-    },
-    {
-      'id': 'SHS_BLOUSE_WITH_VEST',
-      'category': 'clothing',
-      'imagePath': 'assets/images/SHS_BLOUSE_WITH_VEST.png',
-      'label': 'Blouse with Vest',
-      'price': 180,
-    },
-    {
-      'id': 'SHS_SKIRT',
-      'category': 'clothing',
-      'imagePath': 'assets/images/SHS_SKIRT.png',
-      'label': 'SHS Skirt',
-      'price': 150,
-    },
-    {
-      'id': 'STI_WHITE_CHEF_LONG_SLEEVE_BLOUSE',
-      'category': 'clothing',
-      'imagePath': 'assets/images/STI_WHITE_CHEF_LONG_SLEEVE_BLOUSE.png',
-      'label': 'STI Chef\'s Blouse',
-      'price': 300,
-    },
-    {
-      'id': 'STI_LONG_CHECKERED_PANTS',
-      'category': 'clothing',
-      'imagePath': 'assets/images/STI_LONG_CHECKERED_PANTS.png',
-      'label': 'STI Checkered Pants',
-      'price': 220,
-    },
-    {
-      'id': 'SHS_PE_PANTS',
-      'category': 'clothing',
-      'imagePath': 'assets/images/SHS_PE_PANTS.png',
-      'label': 'SHS PE PANTS',
-      'price': 180,
-    },
-    {
-      'id': 'SHS_PE_SHIRT',
-      'category': 'clothing',
-      'imagePath': 'assets/images/SHS_PE_SHIRT.png',
-      'label': 'SHS PE SHIRT',
-      'price': 160,
-    },
-    {
-      'id': 'STI_CHECKERED_BEANIE',
-      'category': 'accessory',
-      'imagePath': 'assets/images/STI_CHECKERED_BEANIE.png',
-      'label': 'STI Checkered Beanie',
-      'price': 80,
-    },
-    {
-      'id': 'SHS_WASHDAY',
-      'category': 'clothing',
-      'imagePath': 'assets/images/SHS_WASHDAY.png',
-      'label': 'SHS Washday',
-      'price': 90,
-    },
-    {
-      'id': 'SHS_POLO_WITH_VEST',
-      'category': 'clothing',
-      'imagePath': 'assets/images/SHS_POLO_WITH_VEST.png',
-      'label': 'Polo with Vest',
-      'price': 210,
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _fetchItemsFromFirestore();
+  }
+
+  // Fetch items from Firestore
+  Future<void> _fetchItemsFromFirestore() async {
+    try {
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('Inventory_stock')
+          .doc('senior_high_items') // Assuming you're fetching from 'senior_high_items'
+          .collection('Items')
+          .get();
+
+      List<Map<String, dynamic>> fetchedItems = querySnapshot.docs.map((doc) {
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+
+        // Debug: Print the image path to verify it
+        print('Image URL for ${doc.id}: ${data['imagePath']}');
+
+        return {
+          'id': doc.id,
+          'category': data['category'],
+          'imagePath': data['imagePath'], // Firebase storage URL
+          'label': data['label'],
+          'price': data['price'],
+        };
+      }).toList();
+
+      setState(() {
+        items = fetchedItems;
+        isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching items: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
 
   void sortItems(String sortBy) {
     setState(() {
@@ -144,7 +102,9 @@ class _SHSUniformsPageState extends State<SHSUniformsPage> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
+      body: isLoading
+          ? Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -163,7 +123,8 @@ class _SHSUniformsPageState extends State<SHSUniformsPage> {
                 children: [
                   Text(
                     'Sort and Filter',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style:
+                    TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   PopupMenuButton<String>(
                     icon: Icon(Icons.sort),
@@ -174,7 +135,7 @@ class _SHSUniformsPageState extends State<SHSUniformsPage> {
                       });
                     },
                     itemBuilder: (BuildContext context) =>
-                        <PopupMenuEntry<String>>[
+                    <PopupMenuEntry<String>>[
                       const PopupMenuItem<String>(
                         value: 'Sort by price ascending',
                         child: Text('Sort by price ascending'),
@@ -231,8 +192,8 @@ class _SHSUniformsPageState extends State<SHSUniformsPage> {
           MaterialPageRoute(
             builder: (context) => DetailSelection(
               itemLabel: label,
-              itemSize: category == 'clothing' ? '' : null,
-              imagePath: imagePath,
+              itemSize: category == 'senior_high_items' ? '' : null,
+              imagePath: imagePath, // Pass Firebase Storage URL
               price: int.parse(price.substring(1)), // Remove ₱ and parse int
               quantity: 1,
               currentProfileInfo: widget.currentProfileInfo, // Pass the profile info
@@ -252,10 +213,13 @@ class _SHSUniformsPageState extends State<SHSUniformsPage> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
-                child: Image.asset(
-                  imagePath,
+                child: Image.network(
+                  imagePath, // Use the URL from Firebase Storage
                   width: double.infinity,
                   fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Icon(Icons.error); // Show an error icon if image fails to load
+                  },
                 ),
               ),
               SizedBox(height: 8),
