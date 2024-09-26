@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:UNISTOCK/pages/CartPage.dart';
 import 'package:UNISTOCK/pages/DetailSelection.dart';
-import 'package:UNISTOCK/ProfileInfo.dart'; // Import the ProfileInfo class
+import 'package:UNISTOCK/ProfileInfo.dart';
 
 class MerchAccessoriesPage extends StatefulWidget {
   final ProfileInfo currentProfileInfo;
@@ -13,63 +14,13 @@ class MerchAccessoriesPage extends StatefulWidget {
 }
 
 class _MerchAccessoriesPageState extends State<MerchAccessoriesPage> {
-  String selectedSortOption = 'Sort by';
-  List<Map<String, dynamic>> items = [
-    {
-      'imagePath': 'assets/images/clothing1.png',
-      'label': '40th STI Anniversary Oversized Shirt',
-      'price': 340,
-    },
-    {
-      'imagePath': 'assets/images/clothing2.png',
-      'label': 'STI 39th Anniversary Shirt (Blue)',
-      'price': 195,
-    },
-    {
-      'imagePath': 'assets/images/clothing3.png',
-      'label': 'STI 39th Anniversary Shirt (Yellow)',
-      'price': 195,
-    },
-    {
-      'imagePath': 'assets/images/waterbottle.png',
-      'label': 'Water Bottle',
-      'price': 50,
-    },
-    {
-      'imagePath': 'assets/images/wearablepins.png',
-      'label': 'Wearable Pin',
-      'price': 20,
-    },
-    {
-      'imagePath': 'assets/images/lacesC.png',
-      'label': 'Laces',
-      'price': 15,
-    },
-    {
-      'imagePath': 'assets/images/lacesSHS.png',
-      'label': 'Laces',
-      'price': 15,
-    },
-    {
-      'imagePath': 'assets/images/38thanniversary.png',
-      'label': 'Grit (STI 38th Anniversary) Shirt',
-      'price': 195,
-    },
-    {
-      'imagePath': 'assets/images/STI Facemask.png',
-      'label': 'STI Face Mask',
-      'price': 30,
-    },
-  ];
-
-  void sortItems(String sortBy) {
-    setState(() {
-      if (sortBy == 'Sort by price ascending') {
-        items.sort((a, b) => a['price'].compareTo(b['price']));
-      } else if (sortBy == 'Sort by price descending') {
-        items.sort((a, b) => b['price'].compareTo(a['price']));
-      }
-    });
+  // Fetch data from Firestore
+  Stream<QuerySnapshot> _fetchMerchData() {
+    return FirebaseFirestore.instance
+        .collection('Inventory_stock')
+        .doc('Merch & Accessories')
+        .collection('items')
+        .snapshots();
   }
 
   @override
@@ -129,10 +80,7 @@ class _MerchAccessoriesPageState extends State<MerchAccessoriesPage> {
                   PopupMenuButton<String>(
                     icon: Icon(Icons.sort),
                     onSelected: (String result) {
-                      setState(() {
-                        selectedSortOption = result;
-                        sortItems(result);
-                      });
+                      // Sorting logic here
                     },
                     itemBuilder: (BuildContext context) =>
                     <PopupMenuEntry<String>>[
@@ -149,7 +97,29 @@ class _MerchAccessoriesPageState extends State<MerchAccessoriesPage> {
                 ],
               ),
               SizedBox(height: 16),
-              buildItemGrid(context),
+              // Use StreamBuilder to fetch data from Firestore
+              StreamBuilder<DocumentSnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('Inventory_stock')
+                    .doc('Merch & Accessories')
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return Center(child: CircularProgressIndicator());
+                  }
+                  var data = snapshot.data!.data() as Map<String, dynamic>;
+
+                  var items = data.entries.map((entry) {
+                    return {
+                      'label': entry.key,
+                      'imagePath': entry.value['imagePath'],
+                      'price': entry.value['price'],
+                    };
+                  }).toList();
+
+                  return buildItemGrid(context, items);
+                },
+              ),
             ],
           ),
         ),
@@ -157,7 +127,7 @@ class _MerchAccessoriesPageState extends State<MerchAccessoriesPage> {
     );
   }
 
-  Widget buildItemGrid(BuildContext context) {
+  Widget buildItemGrid(BuildContext context, List<Map<String, dynamic>> items) {
     return GridView.builder(
       shrinkWrap: true,
       physics: NeverScrollableScrollPhysics(),
@@ -165,6 +135,7 @@ class _MerchAccessoriesPageState extends State<MerchAccessoriesPage> {
         crossAxisCount: 2,
         crossAxisSpacing: 16.0,
         mainAxisSpacing: 16.0,
+        childAspectRatio: 0.7,
       ),
       itemCount: items.length,
       itemBuilder: (context, index) {
@@ -174,54 +145,60 @@ class _MerchAccessoriesPageState extends State<MerchAccessoriesPage> {
     );
   }
 
-  Widget buildItemCard(BuildContext context, String imagePath, String label, int price) {
+  Widget buildItemCard(BuildContext context, String imagePath, String label,
+      int price) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => DetailSelection(
-              itemLabel: label,
-              itemSize: '', // Default size or adjust as needed
-              imagePath: imagePath,
-              price: price,
-              quantity: 1,
-              currentProfileInfo: widget.currentProfileInfo, // Pass the profile info
-            ),
+            builder: (context) =>
+                DetailSelection(
+                  itemLabel: label,
+                  itemSize: '',
+                  // Default size or adjust as needed
+                  imagePath: imagePath,
+                  price: price,
+                  quantity: 1,
+                  currentProfileInfo: widget
+                      .currentProfileInfo, // Pass the profile info
+                ),
           ),
         );
       },
       child: Card(
         margin: EdgeInsets.all(8.0),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Image.asset(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Wrap image in Expanded or set fixed height
+            Expanded(
+              child: Image.network(
                 imagePath,
-                width: MediaQuery.of(context).size.width * 0.4,
-                height: MediaQuery.of(context).size.width * 0.4,
                 fit: BoxFit.cover,
+                // Ensure image doesn't overflow
+                height: 100,
+                width: double.infinity,
               ),
-              SizedBox(height: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
               ),
-              SizedBox(height: 8),
-              Text(
-                '₱$price',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.black,
-                ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 8),
+            Text(
+              '₱$price',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.black,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

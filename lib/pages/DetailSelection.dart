@@ -5,9 +5,9 @@ import 'package:UNISTOCK/pages/CheckoutPage.dart';
 
 class DetailSelection extends StatefulWidget {
   final String itemLabel;
-  final String? itemSize; // Nullable String for itemSize
+  final String? itemSize;
   final String imagePath;
-  final int price; // Keep price as int
+  final int price;
   final int quantity;
   final ProfileInfo currentProfileInfo;
 

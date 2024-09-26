@@ -371,7 +371,7 @@ class _CartPageState extends State<CartPage> {
                 handleCheckboxChanged(value, item.id);
               },
             ),
-            Image.asset(
+            Image.network(
               item.imagePath,
               width: 50,
               height: 50,
