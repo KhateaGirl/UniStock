@@ -1,6 +1,6 @@
+import 'package:UNISTOCK/DetailSelection.dart';
 import 'package:UNISTOCK/ProfileInfo.dart';
 import 'package:UNISTOCK/pages/CartPage.dart';
-import 'package:UNISTOCK/pages/DetailSelection.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -21,15 +21,14 @@ class CollegeUniSelectionPage extends StatefulWidget {
 class _CollegeUniSelectionPageState extends State<CollegeUniSelectionPage> {
   String selectedSortOption = 'Sort by';
   List<Map<String, dynamic>> uniformItems = [];
-  bool _isLoading = true; // To indicate loading data
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    fetchUniformItems(); // Fetch items from Firestore
+    fetchUniformItems();
   }
 
-  // Fetch items from Firestore based on courseLabel
   Future<void> fetchUniformItems() async {
     try {
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
@@ -40,12 +39,30 @@ class _CollegeUniSelectionPageState extends State<CollegeUniSelectionPage> {
 
       setState(() {
         uniformItems = querySnapshot.docs.map((doc) {
-          return {
-            'id': doc.id,
-            'label': doc['label'],
-            'price': (doc['price'] is double) ? (doc['price'] as double).toInt() : (doc['price'] as int),
-            'imagePath': doc['imageUrl'] ?? '',
-          };
+          // Get the document data and check if it's not null
+          Map<String, dynamic>? data = doc.data() as Map<String, dynamic>?;
+
+          // Debug: Print each document data to confirm structure
+          print('Debug: Fetched document data: $data');
+
+          if (data != null) {
+            return {
+              'id': doc.id,
+              'label': data['label'] ?? 'Unknown Label',
+              'price': (data['price'] is double) ? (data['price'] as double).toInt() : (data['price'] as int),
+              'imagePath': data['imageUrl'] ?? '',
+              'sizes': data.containsKey('sizes') ? data['sizes'] : {}, // Safely include sizes data if it exists
+            };
+          } else {
+            // Handle the case where data is null (fallback or empty map)
+            return {
+              'id': doc.id,
+              'label': 'Unknown Label',
+              'price': 0,
+              'imagePath': '',
+              'sizes': {},
+            };
+          }
         }).toList();
         _isLoading = false; // Data loaded
       });
@@ -57,7 +74,6 @@ class _CollegeUniSelectionPageState extends State<CollegeUniSelectionPage> {
     }
   }
 
-  // Sort items logic
   void sortItems(String sortBy) {
     setState(() {
       if (sortBy == 'Sort by price ascending') {
@@ -177,11 +193,13 @@ class _CollegeUniSelectionPageState extends State<CollegeUniSelectionPage> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => DetailSelection(
+                    itemId: item['id'],  // Pass item ID
+                    courseLabel: widget.courseLabel,  // Pass course label
                     itemLabel: item['label'],
-                    itemSize: item['size'], // Pass the size if applicable
+                    itemSize: null,  // Initially set itemSize to null
                     imagePath: item['imagePath'],
-                    price: item['price'], // Pass price as an integer
-                    quantity: 1, // Set default quantity to 1
+                    price: item['price'],
+                    quantity: 1,  // Set default quantity to 1
                     currentProfileInfo: widget.currentProfileInfo,
                   ),
                 ),
@@ -205,7 +223,7 @@ class _CollegeUniSelectionPageState extends State<CollegeUniSelectionPage> {
                     ),
                   ),
                   Text(
-                    '₱${item['price'].toString()}', // Display price as string
+                    '₱${item['price'].toString()}',
                     style: TextStyle(fontSize: 14),
                   ),
                 ],

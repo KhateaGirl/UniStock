@@ -9,7 +9,7 @@ import 'package:UNISTOCK/ProfileInfo.dart';
 
 class CheckoutPage extends StatelessWidget {
   final String itemLabel;
-  final String itemSize;
+  final String? itemSize;
   final String imagePath;
   final int price;
   final int quantity;
@@ -230,7 +230,7 @@ class CheckoutPage extends StatelessWidget {
 
 class PurchaseSummaryPage extends StatelessWidget {
   final String itemLabel;
-  final String itemSize;
+  final String? itemSize;
   final String imagePath;
   final int price;
   final int quantity;
