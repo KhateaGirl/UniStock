@@ -2,7 +2,7 @@ import 'package:UNISTOCK/ProfileInfo.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:UNISTOCK/pages/CartPage.dart';
-import 'package:UNISTOCK/pages/DetailSelection.dart';
+import 'package:UNISTOCK/services/DetailSelectionSHS.dart';
 
 class SHSUniformsPage extends StatefulWidget {
   final ProfileInfo currentProfileInfo;
@@ -190,7 +190,7 @@ class _SHSUniformsPageState extends State<SHSUniformsPage> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => DetailSelection(
+            builder: (context) => DetailSelectionSHS(
               itemLabel: label,
               itemSize: category == 'senior_high_items' ? '' : null,
               imagePath: imagePath, // Pass Firebase Storage URL

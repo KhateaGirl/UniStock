@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:UNISTOCK/pages/CheckoutPage.dart';
 import 'package:UNISTOCK/ProfileInfo.dart';
 
-class DetailSelection extends StatefulWidget {
+class DetailSelectionCOL extends StatefulWidget {
   final String itemId;
   final String itemLabel;
   final String courseLabel;
@@ -13,7 +13,7 @@ class DetailSelection extends StatefulWidget {
   final int quantity;
   final ProfileInfo currentProfileInfo;
 
-  DetailSelection({
+  DetailSelectionCOL({
     required this.itemId,
     required this.itemLabel,
     required this.courseLabel,
@@ -25,10 +25,10 @@ class DetailSelection extends StatefulWidget {
   });
 
   @override
-  _DetailSelectionState createState() => _DetailSelectionState();
+  _DetailSelectionCOLState createState() => _DetailSelectionCOLState();
 }
 
-class _DetailSelectionState extends State<DetailSelection> {
+class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
   int _currentQuantity = 1;
   String _selectedSize = '';
   List<String> availableSizes = [];
@@ -100,7 +100,21 @@ class _DetailSelectionState extends State<DetailSelection> {
     }
   }
 
-  bool get showSizeOptions => availableSizes.isNotEmpty;
+  bool get disableButtons {
+    // Disable buttons if:
+    // 1. No sizes are available.
+    // 2. A size is required but not selected.
+    // 3. The selected size does not have sufficient stock for the current quantity.
+    if (availableSizes.isEmpty) {
+      return true; // No sizes are available, cannot proceed
+    }
+
+    if (_selectedSize.isEmpty) {
+      return true; // Size selection is required but not selected
+    }
+
+    return false; // All conditions are met, buttons can be enabled
+  }
 
   void showSizeNotSelectedDialog() {
     showDialog(
@@ -193,21 +207,7 @@ class _DetailSelectionState extends State<DetailSelection> {
                 widget.itemLabel,
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
-              if (category != null) ...[
-                SizedBox(height: 8),
-                Text(
-                  'Category: $category',
-                  style: TextStyle(fontSize: 18, color: Colors.grey),
-                ),
-              ],
-              if (courseLabel.isNotEmpty) ...[
-                SizedBox(height: 8),
-                Text(
-                  'Course: $courseLabel',
-                  style: TextStyle(fontSize: 18, color: Colors.grey),
-                ),
-              ],
-              if (showSizeOptions) ...[
+              if (availableSizes.isNotEmpty) ...[
                 SizedBox(height: 10),
                 _buildSizeSelector(),
               ],
@@ -222,16 +222,25 @@ class _DetailSelectionState extends State<DetailSelection> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   ElevatedButton(
-                    onPressed: handleCheckout,
+                    onPressed: disableButtons ? null : handleCheckout,
                     child: Text('Checkout'),
                   ),
                   SizedBox(width: 10),
                   OutlinedButton(
-                    onPressed: handleAddToCart,
+                    onPressed: disableButtons ? null : handleAddToCart,
                     child: Text('Add to Cart'),
                   ),
                 ],
               ),
+              if (disableButtons)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16.0),
+                  child: Text(
+                    'This item is either out of stock or requires a size selection.',
+                    style: TextStyle(color: Colors.red, fontSize: 14),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
             ],
           ),
         ),
@@ -256,6 +265,7 @@ class _DetailSelectionState extends State<DetailSelection> {
       onChanged: (value) {
         setState(() {
           _selectedSize = value ?? '';
+          print('Selected size changed to: $_selectedSize');
         });
       },
     );
@@ -270,6 +280,7 @@ class _DetailSelectionState extends State<DetailSelection> {
               ? () {
             setState(() {
               _currentQuantity--;
+              print('Quantity decreased: $_currentQuantity');
             });
           }
               : null,
@@ -280,6 +291,7 @@ class _DetailSelectionState extends State<DetailSelection> {
           onPressed: () {
             setState(() {
               _currentQuantity++;
+              print('Quantity increased: $_currentQuantity');
             });
           },
           icon: Icon(Icons.add),

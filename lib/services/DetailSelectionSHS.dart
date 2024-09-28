@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:UNISTOCK/pages/CheckoutPage.dart';
 
-class DetailSelection extends StatefulWidget {
+class DetailSelectionSHS extends StatefulWidget {
   final String itemLabel;
   final String? itemSize;
   final String imagePath;
@@ -11,7 +11,7 @@ class DetailSelection extends StatefulWidget {
   final int quantity;
   final ProfileInfo currentProfileInfo;
 
-  DetailSelection({
+  DetailSelectionSHS({
     required this.itemLabel,
     this.itemSize,
     required this.imagePath,
@@ -21,77 +21,96 @@ class DetailSelection extends StatefulWidget {
   });
 
   @override
-  _DetailSelectionState createState() => _DetailSelectionState();
+  _DetailSelectionSHSState createState() => _DetailSelectionSHSState();
 }
 
-class _DetailSelectionState extends State<DetailSelection> {
+class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
   int _currentQuantity = 1;
   String _selectedSize = '';
   List<String> availableSizes = []; // List to store available sizes
+  Map<String, int> sizeQuantities = {}; // Track available quantities by size
 
   @override
   void initState() {
     super.initState();
-    _currentQuantity = widget.quantity; // Initialize _currentQuantity with the quantity parameter
-    _selectedSize = widget.itemSize ?? ''; // Initialize _selectedSize with itemSize or default to empty string
-
-    // Fetch sizes dynamically from Firestore
     _fetchSizesFromFirestore();
   }
 
-  // Fetch available sizes from Firestore
   Future<void> _fetchSizesFromFirestore() async {
     try {
-      DocumentSnapshot doc = await FirebaseFirestore.instance
+      // Fetch the item document from Firestore
+      print('Attempting to fetch document for label: ${widget.itemLabel}');
+
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
           .collection('Inventory_stock')
           .doc('senior_high_items')
           .collection('Items')
-          .doc(widget.itemLabel)
+          .where('label', isEqualTo: widget.itemLabel)
           .get();
 
-      if (doc.exists && doc['sizes'] != null) {
-        List<dynamic> fetchedSizes = doc['sizes'];
-        setState(() {
-          availableSizes = List<String>.from(fetchedSizes);
-        });
+      if (querySnapshot.docs.isNotEmpty) {
+        var doc = querySnapshot.docs.first; // Get the first matching document
+        var data = doc.data() as Map<String, dynamic>;
+
+        if (data.containsKey('sizes') && data['sizes'] != null) {
+          Map<String, dynamic> sizesMap = data['sizes'] as Map<String, dynamic>;
+
+          // Debug print to see what sizes are fetched
+          print('Fetched sizes from Firestore: $sizesMap');
+
+          // Extract available sizes and quantities
+          setState(() {
+            availableSizes = sizesMap.keys.toList(); // Extract size labels like '2XL', '5XL'
+            sizeQuantities = sizesMap.map((size, details) =>
+                MapEntry(size, details['quantity'] ?? 0)); // Extract quantities
+
+            // Filter available sizes to include only those with quantity > 0
+            availableSizes = availableSizes.where((size) => sizeQuantities[size]! > 0).toList();
+
+            print('Available sizes after filtering: $availableSizes');
+          });
+        } else {
+          // Fallback if sizes aren't specified
+          print('Sizes are not specified or available.');
+          setState(() {
+            availableSizes = [];
+            sizeQuantities = {};
+          });
+        }
       } else {
-        // Fallback to default hardcoded sizes
-        setState(() {
-          availableSizes = ['S', 'M', 'L', 'XL', '2XL', '3XL'];
-        });
+        print('No document found with label: ${widget.itemLabel}');
       }
     } catch (e) {
       print('Error fetching sizes: $e');
       setState(() {
-        availableSizes = ['S', 'M', 'L', 'XL', '2XL', '3XL'];
+        availableSizes = [];
+        sizeQuantities = {};
       });
     }
   }
 
-  bool get showSizeOptions => widget.itemSize != null;
+  bool get disableButtons {
+    // Disable buttons if:
+    // 1. No sizes are available.
+    // 2. A size is required but not selected.
+    // 3. The selected size does not have sufficient stock for the current quantity.
+    if (availableSizes.isEmpty) {
+      return true; // No sizes are available, cannot proceed
+    }
 
-  void showSizeNotSelectedDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Size Not Selected'),
-          content: Text('Please select a size before proceeding.'),
-          actions: <Widget>[
-            TextButton(
-              child: Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
+    if (_selectedSize.isEmpty) {
+      return true; // Size selection is required but not selected
+    }
+
+    if (sizeQuantities[_selectedSize] == null || sizeQuantities[_selectedSize]! < _currentQuantity) {
+      return true; // Not enough stock available for the selected size
+    }
+
+    return false; // All conditions met, buttons should be enabled
   }
 
   void handleCheckout() {
-    if (showSizeOptions && _selectedSize.isEmpty) {
+    if (_selectedSize.isEmpty) {
       showSizeNotSelectedDialog();
     } else {
       Navigator.push(
@@ -111,7 +130,7 @@ class _DetailSelectionState extends State<DetailSelection> {
   }
 
   void handleAddToCart() async {
-    if (showSizeOptions && _selectedSize.isEmpty) {
+    if (_selectedSize.isEmpty) {
       showSizeNotSelectedDialog();
     } else {
       String userId = widget.currentProfileInfo.userId;
@@ -123,7 +142,7 @@ class _DetailSelectionState extends State<DetailSelection> {
 
       await cartRef.add({
         'itemLabel': widget.itemLabel,
-        'itemSize': showSizeOptions ? _selectedSize : null,
+        'itemSize': _selectedSize,
         'imagePath': widget.imagePath,
         'price': widget.price,
         'quantity': _currentQuantity,
@@ -135,6 +154,26 @@ class _DetailSelectionState extends State<DetailSelection> {
         SnackBar(content: Text('Item added to cart!')),
       );
     }
+  }
+
+  void showSizeNotSelectedDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Size Not Selected'),
+          content: Text('Please select a size before proceeding.'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -159,7 +198,7 @@ class _DetailSelectionState extends State<DetailSelection> {
                 widget.itemLabel,
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
-              if (showSizeOptions) ...[
+              if (availableSizes.isNotEmpty) ...[
                 SizedBox(height: 10),
                 _buildSizeSelector(),
               ],
@@ -174,16 +213,25 @@ class _DetailSelectionState extends State<DetailSelection> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   ElevatedButton(
-                    onPressed: handleCheckout,
+                    onPressed: disableButtons ? null : handleCheckout,
                     child: Text('Checkout'),
                   ),
                   SizedBox(width: 10),
                   OutlinedButton(
-                    onPressed: handleAddToCart,
+                    onPressed: disableButtons ? null : handleAddToCart,
                     child: Text('Add to Cart'),
                   ),
                 ],
               ),
+              if (disableButtons)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16.0),
+                  child: Text(
+                    'This item is either out of stock or requires a size selection.',
+                    style: TextStyle(color: Colors.red, fontSize: 14),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
             ],
           ),
         ),
@@ -198,12 +246,13 @@ class _DetailSelectionState extends State<DetailSelection> {
       items: availableSizes.map((size) {
         return DropdownMenuItem(
           value: size,
-          child: Text(size),
+          child: Text('$size (${sizeQuantities[size] ?? 0} available)'),
         );
       }).toList(),
       onChanged: (value) {
         setState(() {
           _selectedSize = value ?? '';
+          print('Selected size changed to: $_selectedSize');
         });
       },
     );
@@ -218,6 +267,7 @@ class _DetailSelectionState extends State<DetailSelection> {
               ? () {
             setState(() {
               _currentQuantity--;
+              print('Quantity decreased: $_currentQuantity');
             });
           }
               : null,
@@ -227,7 +277,11 @@ class _DetailSelectionState extends State<DetailSelection> {
         IconButton(
           onPressed: () {
             setState(() {
-              _currentQuantity++;
+              if ((_selectedSize.isEmpty && availableSizes.isEmpty) ||
+                  (sizeQuantities[_selectedSize] ?? 0) > _currentQuantity) {
+                _currentQuantity++;
+                print('Quantity increased: $_currentQuantity');
+              }
             });
           },
           icon: Icon(Icons.add),

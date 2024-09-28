@@ -66,7 +66,9 @@ class _ProfilePageState extends State<ProfilePage> {
               itemName: data['itemLabel'] ?? '',
               quantity: data['quantity'] ?? 0,
               price: data['price'] ?? 0,
-              orderDate: data['orderDate'] ?? 'No date',
+              orderDate: data['orderDate'] ?? Timestamp.now(),  // Ensure this is a Timestamp
+              category: data['category'] ?? 'Unknown',  // Add category parameter
+              courseLabel: data['courseLabel'] ?? 'Unknown',  // Add courseLabel parameter
             );
           }).toList();
         });
