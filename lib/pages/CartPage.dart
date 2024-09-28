@@ -33,35 +33,20 @@ class _CartPageState extends State<CartPage> {
           .doc(user.uid)
           .collection('cart')
           .snapshots()
-          .map((snapshot) =>
-          snapshot.docs.map((doc) => CartItem.fromFirestore(doc)).toList())
+          .map((snapshot) => _aggregateCartItems(snapshot.docs))
           .cast<List<CartItem>>();
 
       cartItemsSubscription = cartItemsStream.listen((items) {
         if (mounted) {
           setState(() {
-            // Group items by itemLabel
-            Map<String, CartItem> groupedItems = {};
-
-            for (var item in items) {
-              if (groupedItems.containsKey(item.itemLabel)) {
-                // Add quantity to the existing item
-                groupedItems[item.itemLabel]!.quantity += item.quantity;
-              } else {
-                // Add new item to the map
-                groupedItems[item.itemLabel] = item;
-              }
-            }
-
-            cartItems = groupedItems.values.toList();
+            cartItems = items;
 
             if (selectAll) {
-              selectedItems =
-                  cartItems.map((item) => item.itemLabel.hashCode).toSet();
+              selectedItems = cartItems.map((item) => item.id.hashCode).toSet();
             } else {
               selectedItems = cartItems
                   .where((item) => item.selected)
-                  .map((item) => item.itemLabel.hashCode)
+                  .map((item) => item.id.hashCode)
                   .toSet();
             }
           });
@@ -70,6 +55,36 @@ class _CartPageState extends State<CartPage> {
     } else {
       cartItemsStream = Stream.value([]);
     }
+  }
+
+  List<CartItem> _aggregateCartItems(List<DocumentSnapshot> docs) {
+    Map<String, CartItem> groupedItems = {};
+
+    for (var doc in docs) {
+      CartItem item = CartItem.fromFirestore(doc);
+      String uniqueKey = "${item.itemLabel}_${item.selectedSize}";
+
+      if (groupedItems.containsKey(uniqueKey)) {
+        groupedItems[uniqueKey]!.quantity += item.quantity;
+        groupedItems[uniqueKey]!.documentReferences.add(doc.reference);
+      } else {
+        groupedItems[uniqueKey] = CartItem(
+          id: item.id,
+          itemLabel: item.itemLabel,
+          imagePath: item.imagePath,
+          availableSizes: item.availableSizes,
+          selectedSize: item.selectedSize,
+          price: item.price,
+          quantity: item.quantity,
+          selected: item.selected,
+          category: item.category,
+          courseLabel: item.courseLabel,
+          documentReferences: [doc.reference], // Store DocumentReference objects
+        );
+      }
+    }
+
+    return groupedItems.values.toList();
   }
 
   @override
@@ -84,7 +99,6 @@ class _CartPageState extends State<CartPage> {
     final User? user = auth.currentUser;
 
     if (user != null) {
-      // Get all cart items with the same itemLabel
       final cartDocs = await firestore
           .collection('users')
           .doc(user.uid)
@@ -95,11 +109,9 @@ class _CartPageState extends State<CartPage> {
       int totalQuantity =
       cartDocs.docs.fold(0, (sum, doc) => sum + (doc['quantity'] as int));
 
-      // Calculate new quantity
       totalQuantity += change;
 
       if (totalQuantity > 0) {
-        // Update the first document's quantity to the new total
         await firestore
             .collection('users')
             .doc(user.uid)
@@ -107,7 +119,6 @@ class _CartPageState extends State<CartPage> {
             .doc(cartDocs.docs[0].id)
             .update({'quantity': totalQuantity});
 
-        // Delete all other documents
         for (var i = 1; i < cartDocs.docs.length; i++) {
           await firestore
               .collection('users')
@@ -117,14 +128,12 @@ class _CartPageState extends State<CartPage> {
               .delete();
         }
 
-        // Update local state
         setState(() {
           cartItems = cartItems
               .where((item) => item.itemLabel != itemLabel || totalQuantity > 0)
               .toList();
         });
       } else {
-        // Delete all documents if quantity is zero or less
         for (var doc in cartDocs.docs) {
           await firestore
               .collection('users')
@@ -134,7 +143,6 @@ class _CartPageState extends State<CartPage> {
               .delete();
         }
 
-        // Update local state
         setState(() {
           cartItems =
               cartItems.where((item) => item.itemLabel != itemLabel).toList();
@@ -143,34 +151,30 @@ class _CartPageState extends State<CartPage> {
     }
   }
 
-  Future<void> updateCartItemSelection(String docId, bool? selected) async {
-    final FirebaseAuth auth = FirebaseAuth.instance;
+  Future<void> updateCartItemSelection(List<DocumentReference> docRefs, bool? selected) async {
     final FirebaseFirestore firestore = FirebaseFirestore.instance;
-    final User? user = auth.currentUser;
+    final WriteBatch batch = firestore.batch();
 
-    if (user != null) {
-      final docRef =
-      firestore.collection('users').doc(user.uid).collection('cart').doc(docId);
-
-      await docRef.update({'selected': selected});
+    for (DocumentReference docRef in docRefs) {
+      batch.update(docRef, {'selected': selected});
     }
+
+    await batch.commit();
   }
 
-  void handleCheckboxChanged(bool? value, String docId) {
+  void handleCheckboxChanged(bool? value, CartItem item) {
     if (mounted) {
       setState(() {
         if (value == true) {
-          selectedItems.add(docId.hashCode);
+          selectedItems.add(item.id.hashCode);
         } else {
-          selectedItems.remove(docId.hashCode);
+          selectedItems.remove(item.id.hashCode);
         }
-        updateCartItemSelection(docId, value);
+
+        // Update all aggregated documents for this item
+        updateCartItemSelection(item.documentReferences, value);
       });
     }
-  }
-
-  void handleQuantityChanged(String itemLabel, int change) async {
-    await updateCartItemQuantity(itemLabel, change);
   }
 
   void handleSelectAllChanged(bool? value) {
@@ -178,10 +182,14 @@ class _CartPageState extends State<CartPage> {
       setState(() {
         selectAll = value ?? false;
         for (var item in cartItems) {
-          handleCheckboxChanged(selectAll, item.id);
+          handleCheckboxChanged(selectAll, item);
         }
       });
     }
+  }
+
+  void handleQuantityChanged(String itemLabel, String? itemSize, int change) async {
+    await updateCartItemQuantity(itemLabel, change);
   }
 
   void showTermsAndConditionsDialog(BuildContext context) {
@@ -240,34 +248,29 @@ class _CartPageState extends State<CartPage> {
 
       for (CartItem item in cartItems) {
         if (item.selected) {
-          final cartDocRef = cartCollection.doc(item.id);
+          for (DocumentReference cartDocRef in item.documentReferences) {
+            batch.update(cartDocRef, {'status': 'bought'});
+            batch.delete(cartDocRef);
 
-          // Update cart item status
-          batch.update(cartDocRef, {'status': 'bought'});
+            final orderDocRef = ordersCollection.doc();
+            batch.set(orderDocRef, {
+              'itemLabel': item.itemLabel,
+              'itemSize': item.selectedSize ?? '',
+              'imagePath': item.imagePath,
+              'price': item.price,
+              'quantity': item.quantity,
+              'orderDate': FieldValue.serverTimestamp(),
+              'category': item.category,
+              'courseLabel': item.courseLabel,
+            });
 
-          // Create a new order document and add additional fields
-          final orderDocRef = ordersCollection.doc();
-          batch.set(orderDocRef, {
-            'itemLabel': item.itemLabel,
-            'itemSize': item.selectedSize ?? '',
-            'imagePath': item.imagePath,
-            'price': item.price,
-            'quantity': item.quantity,
-            'orderDate': FieldValue.serverTimestamp(),
-            'category': item.category,  // Add category
-            'courseLabel': item.courseLabel,  // Add course label
-          });
-
-          // Delete cart item after checkout
-          batch.delete(cartDocRef);
-
-          // Notification logic
-          await notificationService.showNotification(
-            user.uid,
-            item.itemLabel.hashCode,
-            'Item Purchased',
-            'Your purchase for ${item.itemLabel} has been successfully processed.',
-          );
+            await notificationService.showNotification(
+              user.uid,
+              item.itemLabel.hashCode,
+              'Item Purchased',
+              'Your purchase for ${item.itemLabel} has been successfully processed.',
+            );
+          }
         }
       }
 
@@ -303,8 +306,6 @@ class _CartPageState extends State<CartPage> {
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return Center(child: Text('No items in the cart.'));
           }
-
-          final cartItems = snapshot.data!;
 
           return Column(
             children: [
@@ -367,17 +368,22 @@ class _CartPageState extends State<CartPage> {
         padding: const EdgeInsets.all(8.0),
         child: Row(
           children: [
-            Checkbox(
-              value: selectedItems.contains(item.itemLabel.hashCode),
-              onChanged: (bool? value) {
-                handleCheckboxChanged(value, item.id);
-              },
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: Checkbox(
+                value: selectedItems.contains(item.id.hashCode),
+                onChanged: (bool? value) {
+                  handleCheckboxChanged(value, item);
+                },
+              ),
             ),
-            Image.network(
-              item.imagePath,
+            SizedBox(
               width: 50,
               height: 50,
-              fit: BoxFit.cover,
+              child: Image.network(
+                item.imagePath,
+                fit: BoxFit.cover,
+              ),
             ),
             SizedBox(width: 16),
             Expanded(
@@ -416,7 +422,7 @@ class _CartPageState extends State<CartPage> {
                             icon: Icon(Icons.remove),
                             onPressed: item.quantity > 1
                                 ? () {
-                              handleQuantityChanged(item.itemLabel, -1);
+                              handleQuantityChanged(item.itemLabel, item.selectedSize, -1);
                             }
                                 : null,
                           ),
@@ -424,7 +430,7 @@ class _CartPageState extends State<CartPage> {
                           IconButton(
                             icon: Icon(Icons.add),
                             onPressed: () {
-                              handleQuantityChanged(item.itemLabel, 1);
+                              handleQuantityChanged(item.itemLabel, item.selectedSize, 1);
                             },
                           ),
                         ],

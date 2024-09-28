@@ -66,9 +66,9 @@ class _ProfilePageState extends State<ProfilePage> {
               itemName: data['itemLabel'] ?? '',
               quantity: data['quantity'] ?? 0,
               price: data['price'] ?? 0,
-              orderDate: data['orderDate'] ?? Timestamp.now(),  // Ensure this is a Timestamp
-              category: data['category'] ?? 'Unknown',  // Add category parameter
-              courseLabel: data['courseLabel'] ?? 'Unknown',  // Add courseLabel parameter
+              orderDate: data['orderDate'] ?? Timestamp.now(),
+              category: data['category'] ?? 'Unknown',
+              courseLabel: data['courseLabel'] ?? 'Unknown',
             );
           }).toList();
         });
@@ -212,6 +212,30 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  void _showAboutUs() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('About Us'),
+          content: Text(
+              "We’re a group of students from STI College Batangas who came together to make life a little easier for our fellow students. "
+                  "Our app, UniStock, helps streamline the process of buying uniforms and staying updated with school announcements. "
+                  "The team includes Charles Kenneth Adelantar, James Lawrence Peralta, Desiree Magadia, and Mac Ivan Llagas."
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Close'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -227,6 +251,10 @@ class _ProfilePageState extends State<ProfilePage> {
           IconButton(
             icon: Icon(Icons.edit, color: Colors.white),
             onPressed: _editProfile,
+          ),
+          IconButton(
+            icon: Icon(Icons.error_outline, color: Colors.white),
+            onPressed: _showAboutUs,
           ),
         ],
       ),

@@ -12,6 +12,9 @@ class CartItem {
   final String category; // Add category field
   final String courseLabel; // Add course label field
 
+  // New field to hold multiple document references for the same item
+  List<DocumentReference> documentReferences;
+
   CartItem({
     required this.id,  // Include id in the constructor
     required this.itemLabel,
@@ -23,6 +26,7 @@ class CartItem {
     this.selected = false,
     required this.category,  // Include category
     required this.courseLabel, // Include courseLabel
+    this.documentReferences = const [], // Initialize with an empty list
   });
 
   // Factory method to create a CartItem from Firestore data
@@ -39,6 +43,7 @@ class CartItem {
       selected: data['selected'] ?? false,
       category: data['category'] ?? 'Unknown', // Assign category value
       courseLabel: data['courseLabel'] ?? 'Unknown', // Assign course label value
+      documentReferences: [doc.reference], // Initialize with the current document reference
     );
   }
 
@@ -55,5 +60,10 @@ class CartItem {
       'category': category, // Add category to map
       'courseLabel': courseLabel, // Add course label to map
     };
+  }
+
+  // Method to add document references
+  void addDocumentReference(DocumentReference ref) {
+    documentReferences.add(ref);
   }
 }
