@@ -234,20 +234,18 @@ class _CartPageState extends State<CartPage> {
     final User? user = auth.currentUser;
 
     if (user != null) {
-      final cartCollection =
-      firestore.collection('users').doc(user.uid).collection('cart');
-
-      final ordersCollection =
-      firestore.collection('users').doc(user.uid).collection('orders');
-
+      final cartCollection = firestore.collection('users').doc(user.uid).collection('cart');
+      final ordersCollection = firestore.collection('users').doc(user.uid).collection('orders');
       final WriteBatch batch = firestore.batch();
 
       for (CartItem item in cartItems) {
         if (item.selected) {
           final cartDocRef = cartCollection.doc(item.id);
 
+          // Update cart item status
           batch.update(cartDocRef, {'status': 'bought'});
 
+          // Create a new order document and add additional fields
           final orderDocRef = ordersCollection.doc();
           batch.set(orderDocRef, {
             'itemLabel': item.itemLabel,
@@ -256,10 +254,14 @@ class _CartPageState extends State<CartPage> {
             'price': item.price,
             'quantity': item.quantity,
             'orderDate': FieldValue.serverTimestamp(),
+            'category': item.category,  // Add category
+            'courseLabel': item.courseLabel,  // Add course label
           });
 
+          // Delete cart item after checkout
           batch.delete(cartDocRef);
 
+          // Notification logic
           await notificationService.showNotification(
             user.uid,
             item.itemLabel.hashCode,

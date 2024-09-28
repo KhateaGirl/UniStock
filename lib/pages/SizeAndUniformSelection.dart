@@ -1,4 +1,4 @@
-import 'package:UNISTOCK/DetailSelection.dart';
+import 'package:UNISTOCK/services/DetailSelectionCOL.dart';
 import 'package:UNISTOCK/ProfileInfo.dart';
 import 'package:UNISTOCK/pages/CartPage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -192,7 +192,7 @@ class _CollegeUniSelectionPageState extends State<CollegeUniSelectionPage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => DetailSelection(
+                  builder: (context) => DetailSelectionCOL(
                     itemId: item['id'],  // Pass item ID
                     courseLabel: widget.courseLabel,  // Pass course label
                     itemLabel: item['label'],

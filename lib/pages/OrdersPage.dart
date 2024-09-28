@@ -8,13 +8,17 @@ class Order {
   final String itemName;
   final int quantity;
   final int price;
-  final Timestamp orderDate; // This will hold the formatted date as a String
+  final Timestamp orderDate;
+  final String category;      // Add category field
+  final String courseLabel;   // Add course label field
 
   Order({
     required this.itemName,
     required this.quantity,
     required this.price,
-    required this.orderDate, // Pass the formatted date string here
+    required this.orderDate,
+    required this.category,    // Initialize category
+    required this.courseLabel, // Initialize courseLabel
   });
 }
 
@@ -64,12 +68,12 @@ class OrdersPage extends StatelessWidget {
           final orders = snapshot.data!.docs.map((doc) {
             final data = doc.data() as Map<String, dynamic>;
 
+            // Ensure orderDate is a Timestamp
             Timestamp orderTimestamp;
-            if (data['orderDate'] is String) {
-              DateTime parsedDate = DateFormat("yyyy-MM-dd HH:mm:ss").parse(data['orderDate']);
-              orderTimestamp = Timestamp.fromDate(parsedDate);
+            if (data['orderDate'] is Timestamp) {
+              orderTimestamp = data['orderDate'];
             } else {
-              orderTimestamp = data['orderDate'] ?? Timestamp.now();
+              orderTimestamp = Timestamp.now();
             }
 
             return UNISTOCKOrder.Order(
@@ -77,6 +81,8 @@ class OrdersPage extends StatelessWidget {
               quantity: data['quantity'] ?? 0,
               price: data['price'] ?? 0,
               orderDate: orderTimestamp,
+              category: data['category'] ?? 'Unknown',  // Read category
+              courseLabel: data['courseLabel'] ?? 'Unknown',  // Read course label
             );
           }).toList();
 
@@ -86,7 +92,7 @@ class OrdersPage extends StatelessWidget {
             itemBuilder: (context, index) {
               final order = orders[index];
 
-              // Convert Timestamp to DateTime
+              // Convert Timestamp to DateTime for display
               final DateTime orderDateTime = order.orderDate.toDate();
 
               return Card(
@@ -106,9 +112,9 @@ class OrdersPage extends StatelessWidget {
                       ),
                       SizedBox(height: 8),
                       Text('Quantity: ${order.quantity}'),
-                      Text('Price: \$${order.price}'),
+                      Text('Price: ₱${order.price}'),
                       Text(
-                        'Total: \$${order.price * order.quantity}',
+                        'Total: ₱${order.price * order.quantity}',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -116,7 +122,21 @@ class OrdersPage extends StatelessWidget {
                       ),
                       SizedBox(height: 8),
                       Text(
-                        'Order Date: ${DateFormat.yMMMd().add_jm().format(order.orderDate.toDate())}',
+                        'Order Date: ${DateFormat.yMMMd().add_jm().format(orderDateTime)}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      Text(
+                        'Category: ${order.category}', // Display category
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      Text(
+                        'Course Label: ${order.courseLabel}', // Display courseLabel
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey[600],

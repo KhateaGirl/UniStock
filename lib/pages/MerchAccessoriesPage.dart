@@ -1,7 +1,7 @@
+import 'package:UNISTOCK/services/DetailSelectionMerch.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:UNISTOCK/pages/CartPage.dart';
-import 'package:UNISTOCK/pages/DetailSelection.dart';
 import 'package:UNISTOCK/ProfileInfo.dart';
 
 class MerchAccessoriesPage extends StatefulWidget {
@@ -116,7 +116,6 @@ class _MerchAccessoriesPageState extends State<MerchAccessoriesPage> {
                       'price': entry.value['price'],
                     };
                   }).toList();
-
                   return buildItemGrid(context, items);
                 },
               ),
@@ -153,15 +152,14 @@ class _MerchAccessoriesPageState extends State<MerchAccessoriesPage> {
           context,
           MaterialPageRoute(
             builder: (context) =>
-                DetailSelection(
+                DetailSelectionMerch(
                   itemLabel: label,
                   itemSize: '',
-                  // Default size or adjust as needed
                   imagePath: imagePath,
                   price: price,
                   quantity: 1,
                   currentProfileInfo: widget
-                      .currentProfileInfo, // Pass the profile info
+                      .currentProfileInfo,
                 ),
           ),
         );
@@ -176,7 +174,6 @@ class _MerchAccessoriesPageState extends State<MerchAccessoriesPage> {
               child: Image.network(
                 imagePath,
                 fit: BoxFit.cover,
-                // Ensure image doesn't overflow
                 height: 100,
                 width: double.infinity,
               ),
