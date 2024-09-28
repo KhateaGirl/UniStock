@@ -34,6 +34,7 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
   List<String> availableSizes = [];
   String? category;
   String courseLabel = '';
+  int _availableQuantity = 0; // Track the available quantity for the selected size
 
   @override
   void initState() {
@@ -71,6 +72,9 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
           if (sizesData is Map<String, dynamic>) {
             setState(() {
               availableSizes = sizesData.keys.toList();
+              if (_selectedSize.isNotEmpty && sizesData[_selectedSize] != null) {
+                _availableQuantity = sizesData[_selectedSize]['quantity'] ?? 0;
+              }
             });
           } else {
             throw ('The "sizes" field exists but is not a Map for itemId: ${widget.itemId}');
@@ -101,10 +105,6 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
   }
 
   bool get disableButtons {
-    // Disable buttons if:
-    // 1. No sizes are available.
-    // 2. A size is required but not selected.
-    // 3. The selected size does not have sufficient stock for the current quantity.
     if (availableSizes.isEmpty) {
       return true; // No sizes are available, cannot proceed
     }
@@ -266,6 +266,27 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
         setState(() {
           _selectedSize = value ?? '';
           print('Selected size changed to: $_selectedSize');
+
+          // Update the available quantity for the selected size
+          if (value != null && value.isNotEmpty) {
+            String formattedCourseLabel = widget.courseLabel.replaceAll('&', 'and');
+            FirebaseFirestore.instance
+                .collection('Inventory_stock')
+                .doc('college_items')
+                .collection(formattedCourseLabel)
+                .doc(widget.itemId)
+                .get()
+                .then((doc) {
+              if (doc.exists) {
+                var sizesData = doc['sizes'];
+                if (sizesData != null && sizesData is Map<String, dynamic>) {
+                  setState(() {
+                    _availableQuantity = sizesData[_selectedSize]['quantity'] ?? 0;
+                  });
+                }
+              }
+            });
+          }
         });
       },
     );
@@ -288,12 +309,14 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
         ),
         Text('$_currentQuantity'),
         IconButton(
-          onPressed: () {
+          onPressed: _currentQuantity < _availableQuantity // Limit by available stock
+              ? () {
             setState(() {
               _currentQuantity++;
               print('Quantity increased: $_currentQuantity');
             });
-          },
+          }
+              : null,
           icon: Icon(Icons.add),
         ),
       ],
