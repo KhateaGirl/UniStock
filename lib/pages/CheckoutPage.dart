@@ -69,8 +69,8 @@ class CheckoutPage extends StatelessWidget {
 
                 print("Placing Order - Item: $itemLabel, Price: $price, Quantity: $quantity, Total: $totalPrice");
 
-                // Add order to Firestore
-                await FirebaseFirestore.instance
+                // Add order to Firestore and get the generated document reference
+                DocumentReference orderDocRef = await FirebaseFirestore.instance
                     .collection('users')
                     .doc(currentProfileInfo.userId)
                     .collection('orders')  // Subcollection for orders
@@ -85,11 +85,13 @@ class CheckoutPage extends StatelessWidget {
                   'orderDate': FieldValue.serverTimestamp(),
                 });
 
+                // Now use the document ID from the generated order
                 await notificationService.showNotification(
                   currentProfileInfo.userId,
                   0,
                   'Order Placed',
                   'Your order for $itemLabel has been successfully placed!',
+                  orderDocRef.id, // Add the document ID as the fifth argument
                 );
 
                 Navigator.pop(context);
@@ -263,7 +265,8 @@ class PurchaseSummaryPage extends StatelessWidget {
       // Calculate total price
       final int totalPrice = price * quantity;
 
-      print("Saving Order - Item: $itemLabel, Price: $price, Quantity: $quantity, Total: $totalPrice");
+      print(
+          "Saving Order - Item: $itemLabel, Price: $price, Quantity: $quantity, Total: $totalPrice");
 
       // Add order to Firestore
       CollectionReference orders = FirebaseFirestore.instance
@@ -277,8 +280,8 @@ class PurchaseSummaryPage extends StatelessWidget {
         'imagePath': imagePath,
         'price': price,
         'quantity': quantity,
-        'totalPrice': totalPrice,  // Store the total price in Firestore
-        'category': category,      // Store the correct category
+        'totalPrice': totalPrice, // Store the total price in Firestore
+        'category': category, // Store the correct category
         'timestamp': FieldValue.serverTimestamp(),
       });
 
@@ -321,7 +324,8 @@ class PurchaseSummaryPage extends StatelessWidget {
                     image: DecorationImage(
                       image: imagePath.isNotEmpty
                           ? NetworkImage(imagePath)
-                          : AssetImage('assets/icons/default_icon.png') as ImageProvider,
+                          : AssetImage(
+                          'assets/icons/default_icon.png') as ImageProvider,
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -377,52 +381,51 @@ class PurchaseSummaryPage extends StatelessWidget {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => HomePage(
-                        profileInfo: currentProfileInfo,
-                        imagePaths: [
-                          'assets/images/sti announcement 1.png',
-                          'assets/images/sti announcement 2.png',
-                          'assets/images/sti announcement 3.png',
-                        ],
-                        navigationItems: [
-                          {
-                            'icon': Icons.inventory,
-                            'label': 'Uniform',
-                            'onPressed': () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => UniformPage(
-                                        currentProfileInfo: currentProfileInfo)),
-                              );
-                            }
-                          },
-                          {
-                            'icon': Icons.shopping_bag,
-                            'label': 'Merch/Accessories',
-                            'onPressed': () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) =>
-                                        MerchAccessoriesPage(currentProfileInfo: currentProfileInfo)),
-                              );
-                            }
-                          },
-                          {
-                            'icon': Icons.account_circle,
-                            'label': 'Profile',
-                            'onPressed': () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ProfilePage(profileInfo: currentProfileInfo),
-                                ),
-                              );
-                            }
-                          },
-                        ],
-                      )),
+                    builder: (context) =>
+                        HomePage(
+                          profileInfo: currentProfileInfo,
+                          navigationItems: [
+                            {
+                              'icon': Icons.inventory,
+                              'label': 'Uniform',
+                              'onPressed': () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => UniformPage(
+                                          currentProfileInfo: currentProfileInfo)),
+                                );
+                              }
+                            },
+                            {
+                              'icon': Icons.shopping_bag,
+                              'label': 'Merch/Accessories',
+                              'onPressed': () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          MerchAccessoriesPage(
+                                              currentProfileInfo: currentProfileInfo)),
+                                );
+                              }
+                            },
+                            {
+                              'icon': Icons.account_circle,
+                              'label': 'Profile',
+                              'onPressed': () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ProfilePage(
+                                        profileInfo: currentProfileInfo),
+                                  ),
+                                );
+                              }
+                            },
+                          ],
+                        ),
+                  ),
                 );
               },
               child: Text('Back to Home'),

@@ -295,6 +295,7 @@ class _CartPageState extends State<CartPage> {
             batch.update(cartDocRef, {'status': 'bought'});
             batch.delete(cartDocRef);
 
+            // Create a new order document
             final orderDocRef = ordersCollection.doc();
             batch.set(orderDocRef, {
               'itemLabel': item.itemLabel,
@@ -307,11 +308,13 @@ class _CartPageState extends State<CartPage> {
               'courseLabel': item.courseLabel,
             });
 
+            // Call showNotification with 5 arguments, including the document ID
             await notificationService.showNotification(
               user.uid,
               item.itemLabel.hashCode,
               'Item Purchased',
-              'Your purchase for ${item.itemLabel} has been successfully processed.',
+              'Your Reservation for ${item.itemLabel} has been successfully processed.',
+              orderDocRef.id, // Pass the document ID as the fifth argument
             );
           }
         }

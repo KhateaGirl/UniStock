@@ -147,12 +147,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ProfileInfo profileInfo = ProfileInfo.fromDocumentSnapshot(
               userDoc.data() as Map<String, dynamic>);
 
-          final imagePaths = [
-            'assets/images/sti announcement 1.png',
-            'assets/images/sti announcement 2.png',
-            'assets/images/sti announcement 3.png',
-          ];
-
           final navigationItems = [
             {
               'icon': Icons.inventory,
@@ -161,7 +155,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => UniformPage(currentProfileInfo: profileInfo)),
+                      builder: (context) =>
+                          UniformPage(currentProfileInfo: profileInfo)),
                 );
               }
             },
@@ -172,7 +167,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => MerchAccessoriesPage(currentProfileInfo: profileInfo)),
+                      builder: (context) =>
+                          MerchAccessoriesPage(currentProfileInfo: profileInfo)),
                 );
               }
             },
@@ -193,20 +189,18 @@ class _LoginScreenState extends State<LoginScreen> {
           Navigator.push(
             context,
             PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) =>
-                  HomePage(
-                    profileInfo: profileInfo,
-                    imagePaths: imagePaths,
-                    navigationItems: navigationItems,
-                  ),
-              transitionsBuilder: (context, animation, secondaryAnimation,
-                  child) {
+              pageBuilder: (context, animation, secondaryAnimation) => HomePage(
+                profileInfo: profileInfo,
+                navigationItems: navigationItems,
+              ),
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
                 const begin = Offset(1.0, 0.0);
                 const end = Offset(0.0, 0.0);
                 const curve = Curves.ease;
 
-                var tween = Tween(begin: begin, end: end).chain(
-                    CurveTween(curve: curve));
+                var tween = Tween(begin: begin, end: end)
+                    .chain(CurveTween(curve: curve));
 
                 return SlideTransition(
                   position: animation.drive(tween),

@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:dots_indicator/dots_indicator.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:UNISTOCK/pages/CartPage.dart';
 import 'package:UNISTOCK/pages/NotificationPage.dart';
 import 'package:UNISTOCK/ProfileInfo.dart';
 
 class HomePage extends StatefulWidget {
   final ProfileInfo profileInfo;
-  final List<String> imagePaths;
   final List<Map<String, dynamic>> navigationItems;
 
   HomePage({
     required this.profileInfo,
-    required this.imagePaths,
     required this.navigationItems,
   });
 
@@ -21,6 +20,41 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;  // Keep track of the current index for PageView
+  List<String> _imageUrls = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAnnouncementImages();
+  }
+
+  // Fetch announcement image URLs from Firestore
+  Future<void> _fetchAnnouncementImages() async {
+    try {
+      String adminDocumentId = 'ZmjXRodEmi3LOaYA10tH';  // Adjust this if necessary
+
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('admin')
+          .doc(adminDocumentId)
+          .collection('announcements')
+          .get();
+
+      List<String> urls = snapshot.docs.map((doc) {
+        return doc['image_url'] as String;
+      }).toList();
+
+      setState(() {
+        _imageUrls = urls;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching announcements: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +85,8 @@ class _HomePageState extends State<HomePage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => NotificationsPage(userId: widget.profileInfo.userId),
+                  builder: (context) =>
+                      NotificationsPage(userId: widget.profileInfo.userId),
                 ),
               );
             },
@@ -67,88 +102,89 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      body: Column(
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator()) // Loading indicator while fetching data
+          : Column(
         children: <Widget>[
-          Expanded(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16.0),
-                child: Column(
-                  children: [
-                    Container(
-                      height: 200,  // Adjust height as needed
-                      child: PageView.builder(
-                        onPageChanged: (index) {
-                          setState(() {
-                            _currentIndex = index;  // Update current index when the page changes
-                          });
-                        },
-                        itemCount: widget.imagePaths.length,
-                        itemBuilder: (context, index) {
-                          return Container(
-                            child: Center(
-                              child: Image.asset(
-                                widget.imagePaths[index],
-                                fit: BoxFit.cover,
-                                width: 1000,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    DotsIndicator(
-                      dotsCount: widget.imagePaths.length,
-                      position: _currentIndex.toDouble(),
-                      decorator: DotsDecorator(
-                        activeColor: Colors.blue,
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    Divider(
-                      color: Colors.grey,
-                      height: 1,
-                      thickness: 1,
-                    ),
-                    SizedBox(height: 16),
-                    Container(
-                      width: double.infinity,
-                      height: 150,
-                      color: Colors.grey[200],
-                      child: Center(
-                        child: Text(
-                          'Announcements and Restrictions',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                  ],
-                ),
+          // PageView for Announcements
+          Container(
+            height: MediaQuery.of(context).size.height * 0.3,  // Adjust height as needed (30% of screen height)
+            width: double.infinity, // Full screen width
+            child: _imageUrls.isNotEmpty
+                ? PageView.builder(
+              onPageChanged: (index) {
+                setState(() {
+                  _currentIndex = index;  // Update current index when the page changes
+                });
+              },
+              itemCount: _imageUrls.length,
+              itemBuilder: (context, index) {
+                return Container(
+                  width:  MediaQuery.of(context).size.height * 0.3,
+                  child: Image.network(
+                    _imageUrls[index],
+                    fit: BoxFit.fill,  // Make the image cover the entire container
+                    errorBuilder: (context, error, stackTrace) {
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.broken_image, size: 50),
+                          Text('Image failed to load'),
+                        ],
+                      );
+                    },
+                  ),
+                );
+              },
+            )
+                : Center(child: Text('No announcements available')),
+          ),
+          // Dots Indicator for PageView
+          if (_imageUrls.isNotEmpty)
+            DotsIndicator(
+              dotsCount: _imageUrls.length,
+              position: _currentIndex.toDouble(),
+              decorator: DotsDecorator(
+                activeColor: Colors.blue,
               ),
             ),
-          ),
+          SizedBox(height: 16),
           Divider(
             color: Colors.grey,
             height: 1,
             thickness: 1,
           ),
+          SizedBox(height: 16),
           Container(
-            color: Colors.white,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: widget.navigationItems
-                    .map((item) => Expanded(
-                  flex: 1,
-                  child: buildBottomNavItem(
-                      item['icon'], item['label'], item['onPressed']),
-                ))
-                    .toList(),
+            width: double.infinity,
+            height: 150,
+            color: Colors.grey[200],
+            child: Center(
+              child: Text(
+                'Announcements and Restrictions',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ),
+          ),
+          SizedBox(height: 16),
+          Expanded(
+            child: Container(
+              color: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: widget.navigationItems
+                      .map((item) => Expanded(
+                    flex: 1,
+                    child: buildBottomNavItem(
+                        item['icon'], item['label'], item['onPressed']),
+                  ))
+                      .toList(),
+                ),
               ),
             ),
           ),
