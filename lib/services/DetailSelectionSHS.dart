@@ -90,10 +90,7 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
   }
 
   bool get disableButtons {
-    // Disable buttons if:
-    // 1. No sizes are available.
-    // 2. A size is required but not selected.
-    // 3. The selected size does not have sufficient stock for the current quantity.
+
     if (availableSizes.isEmpty) {
       return true; // No sizes are available, cannot proceed
     }
@@ -113,6 +110,13 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
     if (_selectedSize.isEmpty) {
       showSizeNotSelectedDialog();
     } else {
+      // Calculate the total price by multiplying the unit price by the quantity
+      final int unitPrice = widget.price; // Define the unit price
+      final int totalPrice = widget.price * _currentQuantity;
+
+      // Debug information before proceeding to checkout
+      print("Debug: Checkout initiated - Item: ${widget.itemLabel}, Size: $_selectedSize, Quantity: $_currentQuantity, Total Price: $totalPrice, Category: senior_high_items");
+
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -120,8 +124,10 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
             itemLabel: widget.itemLabel,
             itemSize: _selectedSize,
             imagePath: widget.imagePath,
-            price: widget.price,
+            unitPrice: unitPrice,  // Pass the unit price
+            price: totalPrice,  // Use the total price instead of unit price
             quantity: _currentQuantity,
+            category: 'senior_high_items',  // Pass the correct category here
             currentProfileInfo: widget.currentProfileInfo,
           ),
         ),
@@ -133,28 +139,40 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
     if (_selectedSize.isEmpty) {
       showSizeNotSelectedDialog();
     } else {
+      // Retrieve the current user's ID
       String userId = widget.currentProfileInfo.userId;
 
+      // Calculate the total price for the item
+      final int totalPrice = widget.price * _currentQuantity;
+
+      // Debug information before adding to cart
+      print("Debug: Adding to cart - Item: ${widget.itemLabel}, Size: $_selectedSize, Quantity: $_currentQuantity, Total Price: $totalPrice, Category: senior_high_items");
+
+      // Reference to the user's cart in Firestore
       CollectionReference cartRef = FirebaseFirestore.instance
           .collection('users')
           .doc(userId)
           .collection('cart');
 
+      // Add item to the cart with the total price
       await cartRef.add({
         'itemLabel': widget.itemLabel,
         'itemSize': _selectedSize,
         'imagePath': widget.imagePath,
-        'price': widget.price,
+        'price': totalPrice,  // Store the total price in the price field
         'quantity': _currentQuantity,
+        'category': 'senior_high_items',  // Include category when adding to cart
         'status': 'pending',
         'timestamp': FieldValue.serverTimestamp(),
       });
 
+      // Show a confirmation message to the user
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Item added to cart!')),
       );
     }
   }
+
 
   void showSizeNotSelectedDialog() {
     showDialog(

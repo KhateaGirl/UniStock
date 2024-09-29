@@ -111,15 +111,9 @@ class OrdersPage extends StatelessWidget {
                         ),
                       ),
                       SizedBox(height: 8),
+                      Text('Unit Price: ₱${order.price ~/ order.quantity}'), // Display the unit price calculated from total and quantity
                       Text('Quantity: ${order.quantity}'),
-                      Text('Price: ₱${order.price}'),
-                      Text(
-                        'Total: ₱${order.price * order.quantity}',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      Text('Total: ₱${order.price}'), // Keep total price as it is
                       SizedBox(height: 8),
                       Text(
                         'Order Date: ${DateFormat.yMMMd().add_jm().format(orderDateTime)}',

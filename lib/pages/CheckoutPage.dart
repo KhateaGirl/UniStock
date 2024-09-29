@@ -11,8 +11,10 @@ class CheckoutPage extends StatelessWidget {
   final String itemLabel;
   final String? itemSize;
   final String imagePath;
+  final int unitPrice; // New parameter for unit price
   final int price;
   final int quantity;
+  final String category; // Added category here
   final ProfileInfo currentProfileInfo;
 
   final NotificationService notificationService = NotificationService();
@@ -21,8 +23,10 @@ class CheckoutPage extends StatelessWidget {
     required this.itemLabel,
     required this.itemSize,
     required this.imagePath,
+    required this.unitPrice, // Add this parameter
     required this.price,
     required this.quantity,
+    required this.category, // Add this parameter
     required this.currentProfileInfo,
   });
 
@@ -60,6 +64,11 @@ class CheckoutPage extends StatelessWidget {
             TextButton(
               child: Text('Accept'),
               onPressed: () async {
+                // Calculate total price
+                final int totalPrice = price * quantity;
+
+                print("Placing Order - Item: $itemLabel, Price: $price, Quantity: $quantity, Total: $totalPrice");
+
                 // Add order to Firestore
                 await FirebaseFirestore.instance
                     .collection('users')
@@ -71,6 +80,8 @@ class CheckoutPage extends StatelessWidget {
                   'imagePath': imagePath,
                   'price': price,
                   'quantity': quantity,
+                  'totalPrice': totalPrice,  // Storing the total price in Firestore
+                  'category': category,      // Store the correct category
                   'orderDate': FieldValue.serverTimestamp(),
                 });
 
@@ -91,6 +102,7 @@ class CheckoutPage extends StatelessWidget {
                       imagePath: imagePath,
                       price: price,
                       quantity: quantity,
+                      category: category, // Pass category to summary page
                       currentProfileInfo: currentProfileInfo,
                     ),
                   ),
@@ -159,7 +171,7 @@ class CheckoutPage extends StatelessWidget {
                     fit: BoxFit.cover,
                     errorBuilder: (BuildContext context, Object error, StackTrace? stackTrace) {
                       return Center(
-                        child: Icon(Icons.error, size: 50, color: Colors.red), // Show error icon if image fails to load
+                        child: Icon(Icons.error, size: 50, color: Colors.red),
                       );
                     },
                     loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
@@ -216,7 +228,6 @@ class CheckoutPage extends StatelessWidget {
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
-                // Show terms and conditions dialog
                 showTermsAndConditionsDialog(context);
               },
               child: Text('Proceed to Checkout'),
@@ -234,6 +245,7 @@ class PurchaseSummaryPage extends StatelessWidget {
   final String imagePath;
   final int price;
   final int quantity;
+  final String category;
   final ProfileInfo currentProfileInfo;
 
   PurchaseSummaryPage({
@@ -242,11 +254,18 @@ class PurchaseSummaryPage extends StatelessWidget {
     required this.imagePath,
     required this.price,
     required this.quantity,
+    required this.category,
     required this.currentProfileInfo,
   });
 
   Future<void> _saveOrderToFirestore() async {
     try {
+      // Calculate total price
+      final int totalPrice = price * quantity;
+
+      print("Saving Order - Item: $itemLabel, Price: $price, Quantity: $quantity, Total: $totalPrice");
+
+      // Add order to Firestore
       CollectionReference orders = FirebaseFirestore.instance
           .collection('users')
           .doc(currentProfileInfo.userId)
@@ -258,6 +277,8 @@ class PurchaseSummaryPage extends StatelessWidget {
         'imagePath': imagePath,
         'price': price,
         'quantity': quantity,
+        'totalPrice': totalPrice,  // Store the total price in Firestore
+        'category': category,      // Store the correct category
         'timestamp': FieldValue.serverTimestamp(),
       });
 
@@ -269,7 +290,6 @@ class PurchaseSummaryPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Calculate the total cost
     final int totalCost = price * quantity;
 
     return Scaffold(
@@ -301,7 +321,7 @@ class PurchaseSummaryPage extends StatelessWidget {
                     image: DecorationImage(
                       image: imagePath.isNotEmpty
                           ? NetworkImage(imagePath)
-                          : AssetImage('assets/icons/default_icon.png') as ImageProvider, // Fallback icon
+                          : AssetImage('assets/icons/default_icon.png') as ImageProvider,
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -372,8 +392,8 @@ class PurchaseSummaryPage extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) =>
-                                        UniformPage(currentProfileInfo: currentProfileInfo)),
+                                    builder: (context) => UniformPage(
+                                        currentProfileInfo: currentProfileInfo)),
                               );
                             }
                           },
@@ -402,8 +422,7 @@ class PurchaseSummaryPage extends StatelessWidget {
                             }
                           },
                         ],
-                      )
-                  ),
+                      )),
                 );
               },
               child: Text('Back to Home'),

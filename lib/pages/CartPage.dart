@@ -65,8 +65,21 @@ class _CartPageState extends State<CartPage> {
       String uniqueKey = "${item.itemLabel}_${item.selectedSize}";
 
       if (groupedItems.containsKey(uniqueKey)) {
-        groupedItems[uniqueKey]!.quantity += item.quantity;
-        groupedItems[uniqueKey]!.documentReferences.add(doc.reference);
+        // Create a new CartItem with the updated price and quantity
+        final existingItem = groupedItems[uniqueKey]!;
+        groupedItems[uniqueKey] = CartItem(
+          id: existingItem.id,
+          itemLabel: existingItem.itemLabel,
+          imagePath: existingItem.imagePath,
+          availableSizes: existingItem.availableSizes,
+          selectedSize: existingItem.selectedSize,
+          price: existingItem.price + item.price, // Add the price from the new document
+          quantity: existingItem.quantity + item.quantity, // Add the quantity
+          selected: existingItem.selected,
+          category: existingItem.category,
+          courseLabel: existingItem.courseLabel,
+          documentReferences: [...existingItem.documentReferences, doc.reference],
+        );
       } else {
         groupedItems[uniqueKey] = CartItem(
           id: item.id,
@@ -74,7 +87,7 @@ class _CartPageState extends State<CartPage> {
           imagePath: item.imagePath,
           availableSizes: item.availableSizes,
           selectedSize: item.selectedSize,
-          price: item.price,
+          price: item.price, // Initial total price is set as the price of the item
           quantity: item.quantity,
           selected: item.selected,
           category: item.category,
@@ -106,19 +119,33 @@ class _CartPageState extends State<CartPage> {
           .where('itemLabel', isEqualTo: itemLabel)
           .get();
 
-      int totalQuantity =
-      cartDocs.docs.fold(0, (sum, doc) => sum + (doc['quantity'] as int));
+      // If no items are found, return early.
+      if (cartDocs.docs.isEmpty) {
+        return;
+      }
 
+      // Get the first item to use for updating the price and quantity.
+      final firstDoc = cartDocs.docs.first;
+      final int unitPrice = firstDoc['price'] ~/ firstDoc['quantity']; // Calculate the unit price from total price and quantity.
+
+      int totalQuantity = cartDocs.docs.fold(0, (sum, doc) => sum + (doc['quantity'] as int));
       totalQuantity += change;
 
       if (totalQuantity > 0) {
+        final int newTotalPrice = unitPrice * totalQuantity; // Calculate the new total price.
+
+        // Update the first document with the new quantity and price.
         await firestore
             .collection('users')
             .doc(user.uid)
             .collection('cart')
-            .doc(cartDocs.docs[0].id)
-            .update({'quantity': totalQuantity});
+            .doc(firstDoc.id)
+            .update({
+          'quantity': totalQuantity,
+          'price': newTotalPrice,
+        });
 
+        // Delete any additional documents (since we want a single record for aggregated items).
         for (var i = 1; i < cartDocs.docs.length; i++) {
           await firestore
               .collection('users')
@@ -128,12 +155,29 @@ class _CartPageState extends State<CartPage> {
               .delete();
         }
 
+        // Update the local state with the new values.
         setState(() {
-          cartItems = cartItems
-              .where((item) => item.itemLabel != itemLabel || totalQuantity > 0)
-              .toList();
+          cartItems = cartItems.map((item) {
+            if (item.itemLabel == itemLabel) {
+              return CartItem(
+                id: item.id,
+                itemLabel: item.itemLabel,
+                imagePath: item.imagePath,
+                availableSizes: item.availableSizes,
+                selectedSize: item.selectedSize,
+                price: newTotalPrice, // Update the price.
+                quantity: totalQuantity, // Update the quantity.
+                selected: item.selected,
+                category: item.category,
+                courseLabel: item.courseLabel,
+                documentReferences: item.documentReferences,
+              );
+            }
+            return item;
+          }).toList();
         });
       } else {
+        // If quantity drops to 0 or below, remove all documents.
         for (var doc in cartDocs.docs) {
           await firestore
               .collection('users')
@@ -144,8 +188,7 @@ class _CartPageState extends State<CartPage> {
         }
 
         setState(() {
-          cartItems =
-              cartItems.where((item) => item.itemLabel != itemLabel).toList();
+          cartItems = cartItems.where((item) => item.itemLabel != itemLabel).toList();
         });
       }
     }
@@ -204,7 +247,7 @@ class _CartPageState extends State<CartPage> {
             child: SingleChildScrollView(
               child: Text(
                 '1. Acceptance of Terms: By accessing or using this service, you agree to be bound by these terms and conditions. If you do not agree with any part of these terms, you may not use the service.\n\n'
-                    '2. Use of Service: The service provided is for personal and non-commercial use only. You agree not to modify, copy, distribute, transmit, display, perform, reproduce, publish, license, create derivative works from, transfer, or sell any information, software, products, or services obtained from the service.\n\n'
+                    '2. Use of Service: The service provided is for personal and non-commercial use only...\n\n'
                     '3. User Responsibilities: You are responsible for maintaining the confidentiality of any account information and passwords used for this service. You agree to accept responsibility for all activities that occur under your account or password.\n\n'
                     '4. Privacy: Your use of the service is subject to our Privacy Policy, which governs the collection, use, and disclosure of your information. By using the service, you consent to the practices described in the Privacy Policy.\n\n'
                     '5. Limitation of Liability: In no event shall we be liable for any direct, indirect, incidental, special, consequential, or punitive damages arising out of or related to your use of the service, whether based on warranty, contract, tort (including negligence), or any other legal theory.\n\n'
@@ -257,7 +300,7 @@ class _CartPageState extends State<CartPage> {
               'itemLabel': item.itemLabel,
               'itemSize': item.selectedSize ?? '',
               'imagePath': item.imagePath,
-              'price': item.price,
+              'price': item.price, // Use the stored total price
               'quantity': item.quantity,
               'orderDate': FieldValue.serverTimestamp(),
               'category': item.category,
@@ -360,7 +403,9 @@ class _CartPageState extends State<CartPage> {
   }
 
   Widget buildCartItem(CartItem item) {
-    final int totalPrice = item.price * item.quantity;
+    // Use the aggregated price as it already represents the total price for that item
+    final int unitPrice = item.price; // Get unit price
+    final int totalPrice = unitPrice * item.quantity; // Calculate total price based on quantity
 
     return Card(
       margin: EdgeInsets.all(8.0),
@@ -410,7 +455,7 @@ class _CartPageState extends State<CartPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        '₱$totalPrice',
+                        '₱$unitPrice', // Display unit price
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.black,
@@ -422,7 +467,8 @@ class _CartPageState extends State<CartPage> {
                             icon: Icon(Icons.remove),
                             onPressed: item.quantity > 1
                                 ? () {
-                              handleQuantityChanged(item.itemLabel, item.selectedSize, -1);
+                              handleQuantityChanged(
+                                  item.itemLabel, item.selectedSize, -1);
                             }
                                 : null,
                           ),
@@ -430,7 +476,8 @@ class _CartPageState extends State<CartPage> {
                           IconButton(
                             icon: Icon(Icons.add),
                             onPressed: () {
-                              handleQuantityChanged(item.itemLabel, item.selectedSize, 1);
+                              handleQuantityChanged(
+                                  item.itemLabel, item.selectedSize, 1);
                             },
                           ),
                         ],

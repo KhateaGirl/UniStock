@@ -42,16 +42,5 @@ class NotificationService {
       body,
       platformChannelSpecifics,
     );
-
-    // Save the notification to the user's subcollection in Firestore
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .collection('notifications')
-        .add({
-      'title': title,
-      'body': body,
-      'timestamp': FieldValue.serverTimestamp(),
-    });
   }
 }

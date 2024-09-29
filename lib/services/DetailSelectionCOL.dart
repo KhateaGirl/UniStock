@@ -140,6 +140,12 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
     if (availableSizes.isNotEmpty && _selectedSize.isEmpty) {
       showSizeNotSelectedDialog();
     } else {
+      final int unitPrice = widget.price;
+      final int totalPrice = widget.price * _currentQuantity; // Calculate the total price
+
+      // Debug information before checkout
+      print("Debug: Checkout initiated - Item: ${widget.itemLabel}, Size: $_selectedSize, Quantity: $_currentQuantity, Total Price: $totalPrice, Category: ${category ?? 'college_items'}");
+
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -147,8 +153,10 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
             itemLabel: widget.itemLabel,
             itemSize: availableSizes.isNotEmpty ? _selectedSize : null,
             imagePath: widget.imagePath,
-            price: widget.price,
+            unitPrice: unitPrice,
+            price: totalPrice,  // Store the total price in the `price` field itself
             quantity: _currentQuantity,
+            category: category ?? 'college_items',  // Pass the correct category here
             currentProfileInfo: widget.currentProfileInfo,
           ),
         ),
@@ -161,6 +169,13 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
       showSizeNotSelectedDialog();
     } else {
       String userId = widget.currentProfileInfo.userId;
+      final String resolvedCategory = category ?? 'Unknown'; // Ensure category has a default value
+
+      // Calculate the total price before adding to the cart
+      final int totalPrice = widget.price * _currentQuantity;
+
+      // Debug information before adding to cart
+      print("Debug: Adding to cart - Item: ${widget.itemLabel}, Size: $_selectedSize, Quantity: $_currentQuantity, Total Price: $totalPrice, Category: $resolvedCategory");
 
       CollectionReference cartRef = FirebaseFirestore.instance
           .collection('users')
@@ -171,9 +186,9 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
         'itemLabel': widget.itemLabel,
         'itemSize': availableSizes.isNotEmpty ? _selectedSize : null,
         'imagePath': widget.imagePath,
-        'price': widget.price,
+        'price': totalPrice, // Store the total price in the `price` field
         'quantity': _currentQuantity,
-        'category': category ?? 'Unknown',
+        'category': resolvedCategory,  // Store the correct category
         'courseLabel': courseLabel,
         'status': 'pending',
         'timestamp': FieldValue.serverTimestamp(),
