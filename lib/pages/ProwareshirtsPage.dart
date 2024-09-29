@@ -198,16 +198,21 @@ class _ProwareShirtsPageState extends State<ProwareShirtsPage> {
                     onPressed: () {
                       // Handle checkout
                       if (selectedSize.isNotEmpty) {
+                        final int unitPrice = 195; // Define the unit price
+                        final int totalPrice = unitPrice * 1; // Assuming quantity is 1 for now
+
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => CheckoutPage(
+                              category: 'Proware',
                               itemLabel: '$selectedShirtType Wash-Day Shirt',
                               itemSize: selectedSize,
                               imagePath: selectedShirtType == 'College'
                                   ? collegeShirtImage
                                   : shsShirtImage,
-                              price: 195,
+                              unitPrice: unitPrice, // Pass the unit price here
+                              price: totalPrice, // Pass the total price here
                               quantity: 1,
                               currentProfileInfo: widget.currentProfileInfo, // Pass the profile info
                             ),
@@ -226,8 +231,7 @@ class _ProwareShirtsPageState extends State<ProwareShirtsPage> {
                                 TextButton(
                                   child: Text('OK'),
                                   onPressed: () {
-                                    Navigator.of(context)
-                                        .pop(); // Close the dialog
+                                    Navigator.of(context).pop(); // Close the dialog
                                   },
                                 ),
                               ],
@@ -237,8 +241,7 @@ class _ProwareShirtsPageState extends State<ProwareShirtsPage> {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      padding:
-                      EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                      padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                       backgroundColor: Colors.blue,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),

@@ -1,9 +1,11 @@
+import 'package:UNISTOCK/services/notification_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class NotificationsPage extends StatelessWidget {
   final String userId;
+  final NotificationService _notificationService = NotificationService();
 
   NotificationsPage({required this.userId});
 
@@ -35,6 +37,32 @@ class NotificationsPage extends StatelessWidget {
               ),
             );
           }
+
+          // Handle push notification when a new notification is added
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (snapshot.hasData) {
+              for (var docChange in snapshot.data!.docChanges) {
+                if (docChange.type == DocumentChangeType.added) {
+                  final data = docChange.doc.data() as Map<String, dynamic>;
+
+                  // Extract title, message, and timestamp
+                  final title = data['title'] ?? 'No Title';
+                  final message = data['message'] ?? 'No Message';
+                  final timestamp = data['timestamp'] != null
+                      ? DateFormat.yMMMd().add_jm().format((data['timestamp'] as Timestamp).toDate())
+                      : 'No Timestamp';
+
+                  // Avoid showing repeated notifications by keeping track of the document ID
+                  _notificationService.showNotification(
+                    userId,
+                    docChange.doc.id.hashCode, // Use document ID's hash as a unique ID
+                    title,
+                    "$message\n$timestamp", // Notification body contains message and timestamp
+                  );
+                }
+              }
+            }
+          });
 
           // Build the list of notifications
           final notifications = snapshot.data!.docs.map((doc) {

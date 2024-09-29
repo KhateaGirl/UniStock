@@ -6,7 +6,7 @@ class CartItem {
   final String imagePath;
   final List<String> availableSizes;
   String? selectedSize;
-  final int price;
+  int price;
   int quantity;
   bool selected;
   final String category; // Add category field

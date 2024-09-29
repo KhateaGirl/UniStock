@@ -60,6 +60,8 @@ class _MerchSelectionPageState extends State<MerchSelectionPage> {
     if (widget.showSizeOptions && _selectedSize.isEmpty) {
       showSizeNotSelectedDialog();
     } else {
+      final int unitPrice = widget.price;
+      final int totalPrice = unitPrice * _currentQuantity;
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -67,8 +69,10 @@ class _MerchSelectionPageState extends State<MerchSelectionPage> {
             itemLabel: widget.itemLabel,
             itemSize: _selectedSize,
             imagePath: widget.imagePath,
-            price: widget.price,
+            unitPrice: unitPrice,
+            price: totalPrice,
             quantity: _currentQuantity,
+            category: 'merch_and_accessories',
             currentProfileInfo: widget.currentProfileInfo, // Pass the correct profile info here
           ),
         ),

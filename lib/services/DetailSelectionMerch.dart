@@ -115,6 +115,13 @@ class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
     if (showSizeOptions && _selectedSize.isEmpty) {
       showSizeNotSelectedDialog();
     } else {
+      // Calculate the total price by multiplying the unit price by the quantity
+      final int unitPrice = widget.price; // Use the unit price
+      final int totalPrice = unitPrice * _currentQuantity; // Calculate the total price
+
+// Debug information before proceeding to checkout
+      print("Debug: Checkout initiated - Item: ${widget.itemLabel}, Size: $_selectedSize, Quantity: $_currentQuantity, Total Price: $totalPrice, Category: merch_and_accessories");
+
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -122,8 +129,10 @@ class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
             itemLabel: widget.itemLabel,
             itemSize: _selectedSize,
             imagePath: widget.imagePath,
-            price: widget.price,
+            unitPrice: unitPrice,
+            price: totalPrice,  // Pass the total price to the CheckoutPage
             quantity: _currentQuantity,
+            category: 'merch_and_accessories', // Ensure the correct category
             currentProfileInfo: widget.currentProfileInfo,
           ),
         ),
@@ -135,23 +144,36 @@ class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
     if (showSizeOptions && _selectedSize.isEmpty) {
       showSizeNotSelectedDialog();
     } else {
+      // Retrieve the current user's ID
       String userId = widget.currentProfileInfo.userId;
 
+      // Calculate the total price for the item
+      final int unitPrice = widget.price; // Store the unit price here
+      final int totalPrice = widget.price * _currentQuantity;
+
+      // Debug information before adding to cart
+      print("Debug: Adding to cart - Item: ${widget.itemLabel}, Size: $_selectedSize, Quantity: $_currentQuantity, Total Price: $totalPrice, Category: merch_and_accessories");
+
+      // Reference to the user's cart in Firestore
       CollectionReference cartRef = FirebaseFirestore.instance
           .collection('users')
           .doc(userId)
           .collection('cart');
 
+      // Add item to the cart with the total price
       await cartRef.add({
         'itemLabel': widget.itemLabel,
-        'itemSize': showSizeOptions ? _selectedSize : null,
+        'itemSize': _selectedSize,
         'imagePath': widget.imagePath,
-        'price': widget.price,
+        'price': unitPrice,  // Store the unit price here
         'quantity': _currentQuantity,
+        'totalPrice': totalPrice,  // Add total price for convenience if needed
+        'category': 'merch_and_accessories',  // Store the correct category
         'status': 'pending',
         'timestamp': FieldValue.serverTimestamp(),
       });
 
+      // Show a confirmation message to the user
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Item added to cart!')),
       );
