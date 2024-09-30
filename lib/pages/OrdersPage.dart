@@ -11,6 +11,7 @@ class Order {
   final Timestamp orderDate;
   final String category;      // Add category field
   final String courseLabel;   // Add course label field
+  final String? status;       // Add status field for additional checks
 
   Order({
     required this.itemName,
@@ -19,6 +20,7 @@ class Order {
     required this.orderDate,
     required this.category,    // Initialize category
     required this.courseLabel, // Initialize courseLabel
+    this.status,               // Initialize status
   });
 }
 
@@ -65,6 +67,7 @@ class OrdersPage extends StatelessWidget {
             return Center(child: Text('No orders found.'));
           }
 
+          // Map the documents into a list of Order objects
           final orders = snapshot.data!.docs.map((doc) {
             final data = doc.data() as Map<String, dynamic>;
 
@@ -83,8 +86,17 @@ class OrdersPage extends StatelessWidget {
               orderDate: orderTimestamp,
               category: data['category'] ?? 'Unknown',  // Read category
               courseLabel: data['courseLabel'] ?? 'Unknown',  // Read course label
+              status: data['status'],  // Read status
             );
-          }).toList();
+          }).where((order) => order.status == null || order.status != 'approved').toList(); // Filter orders with status not "approved"
+
+          // Print fetched orders for debugging purposes
+          print("Fetched Orders for user (${user.uid}): $orders");
+
+          // Check if the filtered list is empty after removing "approved" orders
+          if (orders.isEmpty) {
+            return Center(child: Text('No pending orders found.'));
+          }
 
           return ListView.builder(
             padding: EdgeInsets.all(16.0),

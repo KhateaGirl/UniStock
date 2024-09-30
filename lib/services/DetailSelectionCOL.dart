@@ -49,11 +49,12 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
   Future<void> _fetchItemDetailsFromFirestore() async {
     try {
       String formattedCourseLabel = widget.courseLabel.replaceAll('&', 'and');
+      print('Debug: Fetching document for course: $formattedCourseLabel, item ID: ${widget.itemId}');
 
       DocumentSnapshot doc = await FirebaseFirestore.instance
           .collection('Inventory_stock')
           .doc('college_items')
-          .collection(formattedCourseLabel)
+          .collection(widget.courseLabel) // Instead of using formattedCourseLabel
           .doc(widget.itemId)
           .get();
 
@@ -61,7 +62,13 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
         Map<String, dynamic>? data = doc.data() as Map<String, dynamic>?;
 
         if (data == null) {
-          throw ('Document data is null for itemId: ${widget.itemId}');
+          print('Debug: Document data is null for itemId: ${widget.itemId}');
+          setState(() {
+            availableSizes = [];
+            _selectedSize = '';
+            _availableQuantity = 0;
+          });
+          return;
         }
 
         print('Debug: Fetched document data: $data');
@@ -70,11 +77,21 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
           var sizesData = data['sizes'];
 
           if (sizesData is Map<String, dynamic>) {
+            List<String> sizesList = sizesData.keys.toList();
+            int initialQuantity = 0;
+
+            // Select a default size if none is selected
+            String defaultSize = sizesList.isNotEmpty ? sizesList[0] : '';
+
+            if (defaultSize.isNotEmpty) {
+              initialQuantity = sizesData[defaultSize]['quantity'] ?? 0;
+            }
+
             setState(() {
-              availableSizes = sizesData.keys.toList();
-              if (_selectedSize.isNotEmpty && sizesData[_selectedSize] != null) {
-                _availableQuantity = sizesData[_selectedSize]['quantity'] ?? 0;
-              }
+              availableSizes = sizesList;
+              _selectedSize = _selectedSize.isEmpty ? defaultSize : _selectedSize;
+              _availableQuantity = initialQuantity;
+              print('Debug: Available sizes updated: $availableSizes, Default size: $_selectedSize, Quantity for default size: $_availableQuantity');
             });
           } else {
             throw ('The "sizes" field exists but is not a Map for itemId: ${widget.itemId}');
@@ -82,7 +99,10 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
         } else {
           setState(() {
             availableSizes = [];
+            _selectedSize = '';
+            _availableQuantity = 0;
           });
+          print('Debug: No sizes available for itemId: ${widget.itemId}');
         }
 
         setState(() {
@@ -90,8 +110,11 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
           courseLabel = widget.courseLabel;
         });
       } else {
+        print('Debug: Document does not exist for itemId: ${widget.itemId}');
         setState(() {
           availableSizes = [];
+          _selectedSize = '';
+          _availableQuantity = 0;
           category = 'Unknown';
         });
       }
@@ -99,6 +122,8 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
       print('Error fetching item details: $e');
       setState(() {
         availableSizes = [];
+        _selectedSize = '';
+        _availableQuantity = 0;
         category = 'Unknown';
       });
     }
@@ -268,6 +293,8 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
       return Text('No available sizes', style: TextStyle(color: Colors.grey));
     }
 
+    print('Debug: Building size selector with available sizes: $availableSizes');
+
     return DropdownButton<String>(
       value: _selectedSize.isEmpty ? null : _selectedSize,
       hint: Text('Select Size'),
@@ -280,28 +307,27 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
       onChanged: (value) {
         setState(() {
           _selectedSize = value ?? '';
-          print('Selected size changed to: $_selectedSize');
+          print('Debug: Selected size changed to: $_selectedSize');
 
-          // Update the available quantity for the selected size
-          if (value != null && value.isNotEmpty) {
-            String formattedCourseLabel = widget.courseLabel.replaceAll('&', 'and');
-            FirebaseFirestore.instance
-                .collection('Inventory_stock')
-                .doc('college_items')
-                .collection(formattedCourseLabel)
-                .doc(widget.itemId)
-                .get()
-                .then((doc) {
-              if (doc.exists) {
-                var sizesData = doc['sizes'];
-                if (sizesData != null && sizesData is Map<String, dynamic>) {
-                  setState(() {
-                    _availableQuantity = sizesData[_selectedSize]['quantity'] ?? 0;
-                  });
-                }
+          // Fetch the available quantity for the selected size
+          String formattedCourseLabel = widget.courseLabel.replaceAll('&', 'and');
+          FirebaseFirestore.instance
+              .collection('Inventory_stock')
+              .doc('college_items')
+              .collection(formattedCourseLabel)
+              .doc(widget.itemId)
+              .get()
+              .then((doc) {
+            if (doc.exists) {
+              var sizesData = doc['sizes'];
+              if (sizesData != null && sizesData is Map<String, dynamic>) {
+                setState(() {
+                  _availableQuantity = sizesData[_selectedSize]['quantity'] ?? 0;
+                  print('Debug: Available quantity for size $_selectedSize is $_availableQuantity');
+                });
               }
-            });
-          }
+            }
+          });
         });
       },
     );
