@@ -70,6 +70,10 @@ class OrderSummaryPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       ...orderSummary.map((item) {
+                        // Displaying correct price per piece and quantity
+                        final int quantity = item['quantity'] ?? 0;
+                        final double pricePerPiece = (item['pricePerPiece'] ?? 0).toDouble();
+
                         return Container(
                           margin: const EdgeInsets.symmetric(vertical: 8.0),
                           padding: const EdgeInsets.all(16.0),
@@ -100,11 +104,11 @@ class OrderSummaryPage extends StatelessWidget {
                               Text("Size: ${item['itemSize'] ?? 'N/A'}",
                                   style: TextStyle(fontSize: 16)),
                               SizedBox(height: 8),
-                              Text("Quantity: ${item['quantity'] ?? 'N/A'}",
+                              Text("Quantity: $quantity",
                                   style: TextStyle(fontSize: 16)),
                               SizedBox(height: 8),
                               Text(
-                                "Price per Piece: \$${item['pricePerPiece'] ?? 'N/A'}",
+                                "Price per Piece: \₱${pricePerPiece.toStringAsFixed(2)}",
                                 style: TextStyle(fontSize: 16),
                               ),
                             ],
@@ -132,7 +136,12 @@ class OrderSummaryPage extends StatelessWidget {
                             ),
                             SizedBox(height: 10),
                             Text(
-                              "\$${orderSummary.fold(0.0, (prev, item) => prev + (item['quantity'] ?? 0) * (item['pricePerPiece'] ?? 0)).toStringAsFixed(2)}",
+                              // Corrected Total Calculation
+                              "\₱${orderSummary.fold(0.0, (prev, item) {
+                                final int quantity = item['quantity'] ?? 0;
+                                final double pricePerPiece = (item['pricePerPiece'] ?? 0).toDouble();
+                                return prev + (quantity * pricePerPiece);
+                              }).toStringAsFixed(2)}",
                               style: TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,

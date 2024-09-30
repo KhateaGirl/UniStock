@@ -1,4 +1,5 @@
 import 'package:UNISTOCK/models/CartItem.dart';
+import 'package:UNISTOCK/screensize.dart';
 import 'package:UNISTOCK/services/notification_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -333,6 +334,9 @@ class _CartPageState extends State<CartPage> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isMobile = context.isMobileDevice;
+    final bool isTablet = context.isTabletDevice;
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Cart'),
@@ -356,7 +360,7 @@ class _CartPageState extends State<CartPage> {
           return Column(
             children: [
               Padding(
-                padding: const EdgeInsets.all(8.0),
+                padding: EdgeInsets.all(isMobile ? 4.0 : 8.0),
                 child: Row(
                   children: [
                     Checkbox(
@@ -366,7 +370,7 @@ class _CartPageState extends State<CartPage> {
                     Text(
                       'Select All',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: isMobile ? 14 : 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -377,22 +381,24 @@ class _CartPageState extends State<CartPage> {
                 child: ListView.builder(
                   itemCount: cartItems.length,
                   itemBuilder: (context, index) {
-                    return buildCartItem(cartItems[index]);
+                    return buildCartItem(cartItems[index], isMobile);
                   },
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.all(8.0),
+                padding: EdgeInsets.all(isMobile ? 4.0 : 8.0),
                 child: ElevatedButton(
                   onPressed: () {
                     showTermsAndConditionsDialog(context);
                   },
                   child: Text('Checkout'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFFFFEB3B),
-                    padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isMobile ? 30 : 50,
+                      vertical: isMobile ? 10 : 15,
+                    ),
                     textStyle: TextStyle(
-                      fontSize: 18,
+                      fontSize: isMobile ? 14 : 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -405,19 +411,19 @@ class _CartPageState extends State<CartPage> {
     );
   }
 
-  Widget buildCartItem(CartItem item) {
-    // Use the aggregated price as it already represents the total price for that item
-    final int unitPrice = item.price; // Get unit price
-    final int totalPrice = unitPrice * item.quantity; // Calculate total price based on quantity
+  Widget buildCartItem(CartItem item, bool isMobile) {
+    final int unitPrice = item.price;
+    final int totalPrice = unitPrice * item.quantity;
 
     return Card(
-      margin: EdgeInsets.all(8.0),
+      margin: EdgeInsets.all(isMobile ? 4.0 : 8.0),
       child: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: EdgeInsets.all(isMobile ? 4.0 : 8.0),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.only(right: 8.0),
+              padding: EdgeInsets.only(right: isMobile ? 4.0 : 8.0),
               child: Checkbox(
                 value: selectedItems.contains(item.id.hashCode),
                 onChanged: (bool? value) {
@@ -426,14 +432,14 @@ class _CartPageState extends State<CartPage> {
               ),
             ),
             SizedBox(
-              width: 50,
-              height: 50,
+              width: isMobile ? 40 : 50,
+              height: isMobile ? 40 : 50,
               child: Image.network(
                 item.imagePath,
                 fit: BoxFit.cover,
               ),
             ),
-            SizedBox(width: 16),
+            SizedBox(width: isMobile ? 8 : 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -441,33 +447,33 @@ class _CartPageState extends State<CartPage> {
                   Text(
                     item.itemLabel,
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: isMobile ? 16 : 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(height: 8),
+                  SizedBox(height: isMobile ? 4 : 8),
                   Text(
                     'Size: ${item.selectedSize ?? 'N/A'}',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: isMobile ? 12 : 16,
                       color: Colors.grey[600],
                     ),
                   ),
-                  SizedBox(height: 8),
+                  SizedBox(height: isMobile ? 4 : 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        '₱$unitPrice', // Display unit price
+                        '₱$unitPrice',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: isMobile ? 14 : 16,
                           color: Colors.black,
                         ),
                       ),
                       Row(
                         children: [
                           IconButton(
-                            icon: Icon(Icons.remove),
+                            icon: Icon(Icons.remove, size: isMobile ? 16 : 24),
                             onPressed: item.quantity > 1
                                 ? () {
                               handleQuantityChanged(
@@ -475,9 +481,12 @@ class _CartPageState extends State<CartPage> {
                             }
                                 : null,
                           ),
-                          Text('${item.quantity}'),
+                          Text(
+                            '${item.quantity}',
+                            style: TextStyle(fontSize: isMobile ? 14 : 16),
+                          ),
                           IconButton(
-                            icon: Icon(Icons.add),
+                            icon: Icon(Icons.add, size: isMobile ? 16 : 24),
                             onPressed: () {
                               handleQuantityChanged(
                                   item.itemLabel, item.selectedSize, 1);
