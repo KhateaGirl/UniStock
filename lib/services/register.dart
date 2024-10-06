@@ -19,6 +19,9 @@ class _RegisterPageState extends State<RegisterPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  // Password validation regex pattern
+  final String passwordPattern = r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#\$&*~]).{8,}$';
+
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
@@ -156,10 +159,11 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget _buildRegisterButton(MediaQueryData mediaQuery) {
     return Container(
       height: mediaQuery.size.height * 0.06,
-      padding: EdgeInsets.symmetric(horizontal: mediaQuery.size.width * 0.15),
+      width: mediaQuery.size.width * 0.5, // Set a fixed width to reduce button size
       decoration: BoxDecoration(
-          color: const Color.fromARGB(255, 15, 5, 93),
-          borderRadius: BorderRadius.circular(20)),
+        color: const Color.fromARGB(255, 15, 5, 93),
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: Center(
         child: TextButton(
           child: const FittedBox(
@@ -171,23 +175,10 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
           onPressed: () async {
             if (name.text.isEmpty || email.text.isEmpty || password.text.isEmpty) {
-              showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: const Text('Error'),
-                    content: const Text('Please fill in all fields.'),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        child: const Text('OK'),
-                      ),
-                    ],
-                  );
-                },
-              );
+              _showErrorDialog('Please fill in all fields.');
+            } else if (!RegExp(passwordPattern).hasMatch(password.text)) {
+              // Password does not match regex pattern
+              _showErrorDialog('Password must be at least 8 characters, include an uppercase letter, a lowercase letter, a number, and a special character.');
             } else {
               try {
                 // Firebase Registration Logic
@@ -228,28 +219,32 @@ class _RegisterPageState extends State<RegisterPage> {
                 );
               } catch (e) {
                 // Handle errors
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: const Text('Error'),
-                      content: Text(e.toString()),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                          child: const Text('OK'),
-                        ),
-                      ],
-                    );
-                  },
-                );
+                _showErrorDialog(e.toString());
               }
             }
           },
         ),
       ),
+    );
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Error'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
