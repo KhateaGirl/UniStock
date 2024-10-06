@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:UNISTOCK/pages/CheckoutPage.dart';
 
 class DetailSelectionMerch extends StatefulWidget {
-  final String itemLabel;
+  final String label;
   final String? itemSize;
   final String imagePath;
   final int price;
@@ -12,7 +12,7 @@ class DetailSelectionMerch extends StatefulWidget {
   final ProfileInfo currentProfileInfo;
 
   DetailSelectionMerch({
-    required this.itemLabel,
+    required this.label,
     this.itemSize,
     required this.imagePath,
     required this.price,
@@ -49,7 +49,7 @@ class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
     try {
       // Check if the item does not need a size selector
       if (['water bottle', 'wearable pin', 'sti face mask', 'laces']
-          .contains(widget.itemLabel.toLowerCase())) {
+          .contains(widget.label.toLowerCase())) {
         setState(() {
           availableSizes = [];
         });
@@ -65,9 +65,9 @@ class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
       // Check if the document exists and fetch the sizes
       if (doc.exists && doc.data() != null) {
         var data = doc.data() as Map<String, dynamic>;
-        if (data.containsKey(widget.itemLabel) &&
-            data[widget.itemLabel]['sizes'] != null) {
-          Map<String, dynamic> sizesMap = data[widget.itemLabel]['sizes'];
+        if (data.containsKey(widget.label) &&
+            data[widget.label]['sizes'] != null) {
+          Map<String, dynamic> sizesMap = data[widget.label]['sizes'];
           setState(() {
             availableSizes = sizesMap.keys.toList();
             sizeQuantities = sizesMap.map((size, details) {
@@ -132,13 +132,13 @@ class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
       final int totalPrice = unitPrice * _currentQuantity;
 
       // Debug information before proceeding to checkout
-      print("Debug: Checkout initiated - Item: ${widget.itemLabel}, Size: $_selectedSize, Quantity: $_currentQuantity, Total Price: $totalPrice, Category: merch_and_accessories");
+      print("Debug: Checkout initiated - Item: ${widget.label}, Size: $_selectedSize, Quantity: $_currentQuantity, Total Price: $totalPrice, Category: merch_and_accessories");
 
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => CheckoutPage(
-            itemLabel: widget.itemLabel,
+            label: widget.label,
             itemSize: _selectedSize,
             imagePath: widget.imagePath,
             unitPrice: unitPrice,
@@ -162,7 +162,7 @@ class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
       final int totalPrice = unitPrice * _currentQuantity;
 
       // Debug information before adding to cart
-      print("Debug: Adding to cart - Item: ${widget.itemLabel}, Size: $_selectedSize, Quantity: $_currentQuantity, Total Price: $totalPrice, Category: merch_and_accessories");
+      print("Debug: Adding to cart - Item: ${widget.label}, Size: $_selectedSize, Quantity: $_currentQuantity, Total Price: $totalPrice, Category: merch_and_accessories");
 
       CollectionReference cartRef = FirebaseFirestore.instance
           .collection('users')
@@ -170,7 +170,7 @@ class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
           .collection('cart');
 
       await cartRef.add({
-        'itemLabel': widget.itemLabel,
+        'label': widget.label,
         'itemSize': _selectedSize,
         'imagePath': widget.imagePath,
         'price': unitPrice,
@@ -191,7 +191,7 @@ class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.itemLabel),
+        title: Text(widget.label),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -206,7 +206,7 @@ class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
               ),
               SizedBox(height: 16),
               Text(
-                widget.itemLabel,
+                widget.label,
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               if (showSizeOptions) ...[

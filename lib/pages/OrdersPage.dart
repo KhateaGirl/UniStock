@@ -150,7 +150,7 @@ class _OrdersPageState extends State<OrdersPage> {
                                   return Icon(Icons.image, size: 50);
                                 },
                               ),
-                              title: Text(item['itemLabel'] ?? 'Unknown Item'),
+                              title: Text(item['label'] ?? 'Unknown Item'),
                               subtitle: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [

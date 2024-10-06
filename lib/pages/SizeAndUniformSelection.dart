@@ -219,7 +219,7 @@ class _CollegeUniSelectionPageState extends State<CollegeUniSelectionPage> {
             builder: (context) => DetailSelectionCOL(
               itemId: id,
               courseLabel: widget.courseLabel,
-              itemLabel: label,
+              label: label,
               itemSize: null,
               imagePath: imagePath,
               price: price ?? 0, // Set price to 0 if it's null

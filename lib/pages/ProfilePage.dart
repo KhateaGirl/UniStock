@@ -63,7 +63,7 @@ class _ProfilePageState extends State<ProfilePage> {
           orders = orderSnapshot.docs.map((doc) {
             final data = doc.data() as Map<String, dynamic>;
             return UNISTOCKOrder.Order(
-              itemName: data['itemLabel'] ?? '',
+              itemName: data['label'] ?? '',
               quantity: data['quantity'] ?? 0,
               price: data['price'] ?? 0,
               orderDate: data['orderDate'] ?? Timestamp.now(),

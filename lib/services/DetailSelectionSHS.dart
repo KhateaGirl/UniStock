@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:UNISTOCK/pages/CheckoutPage.dart';
 
 class DetailSelectionSHS extends StatefulWidget {
-  final String itemLabel;
+  final String label;
   final String? itemSize;
   final String imagePath;
   final int price; // General price
@@ -12,7 +12,7 @@ class DetailSelectionSHS extends StatefulWidget {
   final ProfileInfo currentProfileInfo;
 
   DetailSelectionSHS({
-    required this.itemLabel,
+    required this.label,
     this.itemSize,
     required this.imagePath,
     required this.price,
@@ -40,13 +40,13 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
   Future<void> _fetchSizesFromFirestore() async {
     try {
       // Fetch the item document from Firestore
-      print('Attempting to fetch document for label: ${widget.itemLabel}');
+      print('Attempting to fetch document for label: ${widget.label}');
 
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
           .collection('Inventory_stock')
           .doc('senior_high_items')
           .collection('Items')
-          .where('label', isEqualTo: widget.itemLabel)
+          .where('label', isEqualTo: widget.label)
           .get();
 
       if (querySnapshot.docs.isNotEmpty) {
@@ -82,7 +82,7 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
           });
         }
       } else {
-        print('No document found with label: ${widget.itemLabel}');
+        print('No document found with label: ${widget.label}');
       }
     } catch (e) {
       print('Error fetching sizes: $e');
@@ -119,13 +119,13 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
       final int totalPrice = unitPrice * _currentQuantity;
 
       // Debug information before proceeding to checkout
-      print("Debug: Checkout initiated - Item: ${widget.itemLabel}, Size: $_selectedSize, Quantity: $_currentQuantity, Total Price: $totalPrice, Category: senior_high_items");
+      print("Debug: Checkout initiated - Item: ${widget.label}, Size: $_selectedSize, Quantity: $_currentQuantity, Total Price: $totalPrice, Category: senior_high_items");
 
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => CheckoutPage(
-            itemLabel: widget.itemLabel,
+            label: widget.label,
             itemSize: _selectedSize,
             imagePath: widget.imagePath,
             unitPrice: unitPrice,  // Pass the unit price
@@ -150,7 +150,7 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
       final int totalPrice = unitPrice * _currentQuantity;
 
       // Debug information before adding to cart
-      print("Debug: Adding to cart - Item: ${widget.itemLabel}, Size: $_selectedSize, Quantity: $_currentQuantity, Total Price: $totalPrice, Category: senior_high_items");
+      print("Debug: Adding to cart - Item: ${widget.label}, Size: $_selectedSize, Quantity: $_currentQuantity, Total Price: $totalPrice, Category: senior_high_items");
 
       // Reference to the user's cart in Firestore
       CollectionReference cartRef = FirebaseFirestore.instance
@@ -160,7 +160,7 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
 
       // Add item to the cart with the total price
       await cartRef.add({
-        'itemLabel': widget.itemLabel,
+        'label': widget.label,
         'itemSize': _selectedSize,
         'imagePath': widget.imagePath,
         'price': totalPrice,  // Store the total price in the price field
@@ -204,7 +204,7 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.itemLabel),
+        title: Text(widget.label),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -219,7 +219,7 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
               ),
               SizedBox(height: 16),
               Text(
-                widget.itemLabel,
+                widget.label,
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               if (availableSizes.isNotEmpty) ...[

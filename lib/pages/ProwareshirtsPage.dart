@@ -206,7 +206,7 @@ class _ProwareShirtsPageState extends State<ProwareShirtsPage> {
                           MaterialPageRoute(
                             builder: (context) => CheckoutPage(
                               category: 'Proware',
-                              itemLabel: '$selectedShirtType Wash-Day Shirt',
+                              label: '$selectedShirtType Wash-Day Shirt',
                               itemSize: selectedSize,
                               imagePath: selectedShirtType == 'College'
                                   ? collegeShirtImage

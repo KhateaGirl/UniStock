@@ -94,7 +94,7 @@ class OrderSummaryPage extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "Item: ${item['itemLabel'] ?? 'N/A'}",
+                                "Item: ${item['label'] ?? 'N/A'}",
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,

@@ -1,12 +1,12 @@
 class Order {
-  final String itemLabel;
+  final String label;
   final String itemSize;
   final int price;
   final int quantity;
   String status;
 
   Order({
-    required this.itemLabel,
+    required this.label,
     required this.itemSize,
     required this.price,
     required this.quantity,
