@@ -221,7 +221,7 @@ class _LoginScreenState extends State<LoginScreen> {
         builder: (context) {
           return AlertDialog(
             title: Text('Login Error'),
-            content: Text(e.message ?? 'Unknown error occurred'),
+            content: Text('Unknown error occurred'),
             actions: <Widget>[
               TextButton(
                 child: Text('OK'),

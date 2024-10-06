@@ -46,10 +46,13 @@ class _CollegeUniSelectionPageState extends State<CollegeUniSelectionPage> {
           print('Debug: Fetched document data: $data');
 
           if (data != null) {
+            // Safely access price and sizes, allowing for null
+            int? price = data['price'] != null ? (data['price'] is double ? (data['price'] as double).toInt() : data['price']) : null;
+
             return {
               'id': doc.id,
               'label': data['label'] ?? 'Unknown Label',
-              'price': (data['price'] is double) ? (data['price'] as double).toInt() : (data['price'] as int),
+              'price': price,
               'imagePath': data['imageUrl'] ?? '',
               'sizes': data.containsKey('sizes') ? data['sizes'] : {}, // Safely include sizes data if it exists
             };
@@ -58,7 +61,7 @@ class _CollegeUniSelectionPageState extends State<CollegeUniSelectionPage> {
             return {
               'id': doc.id,
               'label': 'Unknown Label',
-              'price': 0,
+              'price': null,
               'imagePath': '',
               'sizes': {},
             };
@@ -184,77 +187,160 @@ class _CollegeUniSelectionPageState extends State<CollegeUniSelectionPage> {
       itemCount: uniformItems.length,
       itemBuilder: (context, index) {
         final item = uniformItems[index];
-        if (item['imagePath'] == '' || item['price'] == 0) {
-          return buildSoldOutItem();
+
+        // Check if image or price is missing
+        final String imagePath = item['imagePath'] ?? '';
+        final String label = item['label'] ?? 'No Label Available';
+        final int? price = item['price'];
+
+        // If both image and price are missing, we consider the item unavailable
+        if (imagePath.isEmpty && price == null) {
+          return buildSoldOutItem(label);
         } else {
-          return GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => DetailSelectionCOL(
-                    itemId: item['id'],  // Pass item ID
-                    courseLabel: widget.courseLabel,  // Pass course label
-                    itemLabel: item['label'],
-                    itemSize: null,  // Initially set itemSize to null
-                    imagePath: item['imagePath'],
-                    price: item['price'],
-                    quantity: 1,  // Set default quantity to 1
-                    currentProfileInfo: widget.currentProfileInfo,
-                  ),
-                ),
-              );
-            },
-            child: Card(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: Image.network(
-                      item['imagePath'],
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  Text(
-                    item['label'],
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    '₱${item['price'].toString()}',
-                    style: TextStyle(fontSize: 14),
-                  ),
-                ],
-              ),
-            ),
+          return buildItem(
+            context,
+            item['id'],
+            imagePath,
+            label,
+            price,
           );
         }
       },
     );
   }
 
-  Widget buildSoldOutItem() {
+  Widget buildItem(BuildContext context, String id, String imagePath,
+      String label, int? price) {
     return GestureDetector(
       onTap: () {
-        // Handle tap on sold-out items
-      },
-      child: Card(
-        color: Colors.grey[300],
-        child: Center(
-          child: Text(
-            'SOLD OUT',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.red,
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DetailSelectionCOL(
+              itemId: id,
+              courseLabel: widget.courseLabel,
+              itemLabel: label,
+              itemSize: null,
+              imagePath: imagePath,
+              price: price ?? 0, // Set price to 0 if it's null
+              quantity: 1,
+              currentProfileInfo: widget.currentProfileInfo,
             ),
           ),
+        );
+      },
+      child: Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: imagePath.isNotEmpty
+                  ? Image.network(
+                imagePath,
+                fit: BoxFit.contain, // Make the image fill the available space
+                width: double.infinity,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: Colors.grey[300],
+                    child: Center(
+                      child: Text(
+                        'Image not available',
+                        style: TextStyle(
+                          color: Colors.black54,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              )
+                  : Container(
+                color: Colors.grey[300],
+                child: Center(
+                  child: Text(
+                    'Image not available',
+                    style: TextStyle(
+                      color: Colors.black54,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            SizedBox(height: 4),
+            Text(
+              price != null && price > 0 ? '₱$price' : '₱',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.black,
+              ),
+            ),
+            SizedBox(height: 8),
+          ],
         ),
       ),
     );
   }
+
+  Widget buildSoldOutItem(String label) {
+    return Card(
+      color: Colors.grey[300],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Container(
+              color: Colors.grey[300],
+              child: Center(
+                child: Text(
+                  'Image not available',
+                  style: TextStyle(
+                    color: Colors.black54,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          SizedBox(height: 4),
+          Text(
+            'Price not available',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.black54,
+            ),
+          ),
+          SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
 
   Widget buildNoSizeOption(BuildContext context, String text) {
     return Container(
