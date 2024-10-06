@@ -63,14 +63,14 @@ class _CartPageState extends State<CartPage> {
 
     for (var doc in docs) {
       CartItem item = CartItem.fromFirestore(doc);
-      String uniqueKey = "${item.itemLabel}_${item.selectedSize}";
+      String uniqueKey = "${item.label}_${item.selectedSize}";
 
       if (groupedItems.containsKey(uniqueKey)) {
         // Create a new CartItem with the updated price and quantity
         final existingItem = groupedItems[uniqueKey]!;
         groupedItems[uniqueKey] = CartItem(
           id: existingItem.id,
-          itemLabel: existingItem.itemLabel,
+          label: existingItem.label,
           imagePath: existingItem.imagePath,
           availableSizes: existingItem.availableSizes,
           selectedSize: existingItem.selectedSize,
@@ -84,7 +84,7 @@ class _CartPageState extends State<CartPage> {
       } else {
         groupedItems[uniqueKey] = CartItem(
           id: item.id,
-          itemLabel: item.itemLabel,
+          label: item.label,
           imagePath: item.imagePath,
           availableSizes: item.availableSizes,
           selectedSize: item.selectedSize,
@@ -107,7 +107,7 @@ class _CartPageState extends State<CartPage> {
     super.dispose();
   }
 
-  Future<void> updateCartItemQuantity(String itemLabel, int change) async {
+  Future<void> updateCartItemQuantity(String label, int change) async {
     final FirebaseAuth auth = FirebaseAuth.instance;
     final FirebaseFirestore firestore = FirebaseFirestore.instance;
     final User? user = auth.currentUser;
@@ -117,7 +117,7 @@ class _CartPageState extends State<CartPage> {
           .collection('users')
           .doc(user.uid)
           .collection('cart')
-          .where('itemLabel', isEqualTo: itemLabel)
+          .where('label', isEqualTo: label)
           .get();
 
       // If no items are found, return early.
@@ -159,10 +159,10 @@ class _CartPageState extends State<CartPage> {
         // Update the local state with the new values.
         setState(() {
           cartItems = cartItems.map((item) {
-            if (item.itemLabel == itemLabel) {
+            if (item.label == label) {
               return CartItem(
                 id: item.id,
-                itemLabel: item.itemLabel,
+                label: item.label,
                 imagePath: item.imagePath,
                 availableSizes: item.availableSizes,
                 selectedSize: item.selectedSize,
@@ -189,7 +189,7 @@ class _CartPageState extends State<CartPage> {
         }
 
         setState(() {
-          cartItems = cartItems.where((item) => item.itemLabel != itemLabel).toList();
+          cartItems = cartItems.where((item) => item.label != label).toList();
         });
       }
     }
@@ -232,8 +232,8 @@ class _CartPageState extends State<CartPage> {
     }
   }
 
-  void handleQuantityChanged(String itemLabel, String? itemSize, int change) async {
-    await updateCartItemQuantity(itemLabel, change);
+  void handleQuantityChanged(String label, String? itemSize, int change) async {
+    await updateCartItemQuantity(label, change);
   }
 
   void showTermsAndConditionsDialog(BuildContext context) {
@@ -297,7 +297,7 @@ class _CartPageState extends State<CartPage> {
         if (item.selected) {
           // Add each selected item to the orderItems list
           orderItems.add({
-            'itemLabel': item.itemLabel,
+            'label': item.label,
             'itemSize': item.selectedSize ?? '',
             'imagePath': item.imagePath,
             'price': item.price, // Use the stored total price
@@ -459,7 +459,7 @@ class _CartPageState extends State<CartPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    item.itemLabel,
+                    item.label,
                     style: TextStyle(
                       fontSize: isMobile ? 16 : 18,
                       fontWeight: FontWeight.bold,
@@ -491,7 +491,7 @@ class _CartPageState extends State<CartPage> {
                             onPressed: item.quantity > 1
                                 ? () {
                               handleQuantityChanged(
-                                  item.itemLabel, item.selectedSize, -1);
+                                  item.label, item.selectedSize, -1);
                             }
                                 : null,
                           ),
@@ -503,7 +503,7 @@ class _CartPageState extends State<CartPage> {
                             icon: Icon(Icons.add, size: isMobile ? 16 : 24),
                             onPressed: () {
                               handleQuantityChanged(
-                                  item.itemLabel, item.selectedSize, 1);
+                                  item.label, item.selectedSize, 1);
                             },
                           ),
                         ],

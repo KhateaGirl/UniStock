@@ -200,7 +200,7 @@ class _SHSUniformsPageState extends State<SHSUniformsPage> {
           context,
           MaterialPageRoute(
             builder: (context) => DetailSelectionSHS(
-              itemLabel: label,
+              label: label,
               itemSize: category == 'senior_high_items' ? '' : null,
               imagePath: imagePath, // Pass Firebase Storage URL
               price: parsedPrice, // Use the parsed price value

@@ -5,7 +5,7 @@ import 'package:UNISTOCK/ProfileInfo.dart';
 
 class DetailSelectionCOL extends StatefulWidget {
   final String itemId;
-  final String itemLabel;
+  final String label;
   final String courseLabel;
   final String? itemSize;
   final String imagePath;
@@ -15,7 +15,7 @@ class DetailSelectionCOL extends StatefulWidget {
 
   DetailSelectionCOL({
     required this.itemId,
-    required this.itemLabel,
+    required this.label,
     required this.courseLabel,
     required this.itemSize,
     required this.imagePath,
@@ -163,13 +163,13 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
       final int totalPrice = _displayPrice * _currentQuantity; // Calculate the total price
 
       // Debug information before checkout
-      print("Debug: Checkout initiated - Item: ${widget.itemLabel}, Size: $_selectedSize, Quantity: $_currentQuantity, Total Price: $totalPrice");
+      print("Debug: Checkout initiated - Item: ${widget.label}, Size: $_selectedSize, Quantity: $_currentQuantity, Total Price: $totalPrice");
 
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => CheckoutPage(
-            itemLabel: widget.itemLabel,
+            label: widget.label,
             itemSize: availableSizes.isNotEmpty ? _selectedSize : null,
             imagePath: widget.imagePath,
             unitPrice: _displayPrice,  // Use the size-specific price
@@ -193,7 +193,7 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
       final int totalPrice = _displayPrice * _currentQuantity;
 
       // Debug information before adding to cart
-      print("Debug: Adding to cart - Item: ${widget.itemLabel}, Size: $_selectedSize, Quantity: $_currentQuantity, Total Price: $totalPrice");
+      print("Debug: Adding to cart - Item: ${widget.label}, Size: $_selectedSize, Quantity: $_currentQuantity, Total Price: $totalPrice");
 
       CollectionReference cartRef = FirebaseFirestore.instance
           .collection('users')
@@ -201,7 +201,7 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
           .collection('cart');
 
       await cartRef.add({
-        'itemLabel': widget.itemLabel,
+        'label': widget.label,
         'itemSize': availableSizes.isNotEmpty ? _selectedSize : null,
         'imagePath': widget.imagePath,
         'price': totalPrice, // Store the total price in the `price` field
@@ -222,7 +222,7 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.itemLabel),
+        title: Text(widget.label),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -237,7 +237,7 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
               ),
               SizedBox(height: 16),
               Text(
-                widget.itemLabel,
+                widget.label,
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               if (availableSizes.isNotEmpty) ...[

@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CartItem {
   final String id;  // Document ID
-  final String itemLabel;
+  final String label;
   final String imagePath;
   final List<String> availableSizes;
   String? selectedSize;
@@ -17,7 +17,7 @@ class CartItem {
 
   CartItem({
     required this.id,  // Include id in the constructor
-    required this.itemLabel,
+    required this.label,
     required this.imagePath,
     required this.availableSizes,
     this.selectedSize,
@@ -34,7 +34,7 @@ class CartItem {
     final data = doc.data() as Map<String, dynamic>;
     return CartItem(
       id: doc.id,  // Assign the document ID here
-      itemLabel: data['itemLabel'] ?? 'Unknown',
+      label: data['label'] ?? 'Unknown',
       imagePath: data['imagePath'] ?? 'assets/images/placeholder.png',
       availableSizes: List<String>.from(data['availableSizes'] ?? []),
       selectedSize: data['itemSize'] as String?,  // Use this to differentiate
@@ -50,7 +50,7 @@ class CartItem {
   // Method to convert to a Map for saving back to Firestore if needed
   Map<String, dynamic> toMap() {
     return {
-      'itemLabel': itemLabel,
+      'label': label,
       'imagePath': imagePath,
       'availableSizes': availableSizes,
       'itemSize': selectedSize,

@@ -8,7 +8,7 @@ import 'package:UNISTOCK/pages/ProfilePage.dart';
 import 'package:UNISTOCK/ProfileInfo.dart';
 
 class CheckoutPage extends StatefulWidget {
-  final String itemLabel;
+  final String label;
   final String? itemSize;
   final String imagePath;
   final int unitPrice;
@@ -18,7 +18,7 @@ class CheckoutPage extends StatefulWidget {
   final ProfileInfo currentProfileInfo;
 
   CheckoutPage({
-    required this.itemLabel,
+    required this.label,
     required this.itemSize,
     required this.imagePath,
     required this.unitPrice,
@@ -86,7 +86,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       final int totalPrice = widget.price * widget.quantity;
 
                       print(
-                          "Placing Order - Item: ${widget.itemLabel}, Price: ${widget.price}, Quantity: ${widget.quantity}, Total: $totalPrice");
+                          "Placing Order - Item: ${widget.label}, Price: ${widget.price}, Quantity: ${widget.quantity}, Total: $totalPrice");
 
                       // Add order to Firestore and get the generated document reference
                       DocumentReference orderDocRef = await FirebaseFirestore.instance
@@ -94,7 +94,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           .doc(widget.currentProfileInfo.userId)
                           .collection('orders') // Subcollection for orders
                           .add({
-                        'itemLabel': widget.itemLabel,
+                        'label': widget.label,
                         'itemSize': widget.itemSize,
                         'imagePath': widget.imagePath,
                         'price': widget.price,
@@ -109,7 +109,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                         widget.currentProfileInfo.userId,
                         0,
                         'Order Placed',
-                        'Your order for ${widget.itemLabel} has been successfully placed!',
+                        'Your order for ${widget.label} has been successfully placed!',
                         orderDocRef.id, // Add the document ID as the fifth argument
                       );
 
@@ -118,7 +118,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                         context,
                         MaterialPageRoute(
                           builder: (context) => PurchaseSummaryPage(
-                            itemLabel: widget.itemLabel,
+                            label: widget.label,
                             itemSize: widget.itemSize,
                             imagePath: widget.imagePath,
                             price: widget.price,
@@ -223,7 +223,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        widget.itemLabel,
+                        widget.label,
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -271,7 +271,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
 }
 
 class PurchaseSummaryPage extends StatelessWidget {
-  final String itemLabel;
+  final String label;
   final String? itemSize;
   final String imagePath;
   final int price;
@@ -280,7 +280,7 @@ class PurchaseSummaryPage extends StatelessWidget {
   final ProfileInfo currentProfileInfo;
 
   PurchaseSummaryPage({
-    required this.itemLabel,
+    required this.label,
     required this.itemSize,
     required this.imagePath,
     required this.price,
@@ -295,7 +295,7 @@ class PurchaseSummaryPage extends StatelessWidget {
       final int totalPrice = price * quantity;
 
       print(
-          "Saving Order - Item: $itemLabel, Price: $price, Quantity: $quantity, Total: $totalPrice");
+          "Saving Order - Item: $label, Price: $price, Quantity: $quantity, Total: $totalPrice");
 
       // Add order to Firestore
       CollectionReference orders = FirebaseFirestore.instance
@@ -304,7 +304,7 @@ class PurchaseSummaryPage extends StatelessWidget {
           .collection('orders');
 
       await orders.add({
-        'itemLabel': itemLabel,
+        'label': label,
         'itemSize': itemSize,
         'imagePath': imagePath,
         'price': price,
@@ -365,7 +365,7 @@ class PurchaseSummaryPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        itemLabel,
+                        label,
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,

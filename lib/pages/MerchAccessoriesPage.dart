@@ -163,7 +163,7 @@ class _MerchAccessoriesPageState extends State<MerchAccessoriesPage> {
           context,
           MaterialPageRoute(
             builder: (context) => DetailSelectionMerch(
-              itemLabel: label,
+              label: label,
               itemSize: requiresSizeSelection ? '' : null,
               imagePath: imagePath,
               price: price, // Fallback value of 0 will be used if price is missing

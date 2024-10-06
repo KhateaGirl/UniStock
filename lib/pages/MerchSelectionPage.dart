@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:UNISTOCK/pages/CheckoutPage.dart';
 
 class MerchSelectionPage extends StatefulWidget {
-  final String itemLabel;
+  final String label;
   final String itemSize;
   final String imagePath;
   final int price;
@@ -12,13 +12,13 @@ class MerchSelectionPage extends StatefulWidget {
   final ProfileInfo currentProfileInfo;
 
   MerchSelectionPage({
-    required this.itemLabel,
+    required this.label,
     required this.itemSize,
     required this.imagePath,
     required this.price,
     required this.quantity,
     required this.currentProfileInfo,
-  }) : showSizeOptions = itemLabel.toLowerCase().contains('shirt');
+  }) : showSizeOptions = label.toLowerCase().contains('shirt');
 
   @override
   _MerchSelectionPageState createState() => _MerchSelectionPageState();
@@ -66,7 +66,7 @@ class _MerchSelectionPageState extends State<MerchSelectionPage> {
         context,
         MaterialPageRoute(
           builder: (context) => CheckoutPage(
-            itemLabel: widget.itemLabel,
+            label: widget.label,
             itemSize: _selectedSize,
             imagePath: widget.imagePath,
             unitPrice: unitPrice,
@@ -150,7 +150,7 @@ class _MerchSelectionPageState extends State<MerchSelectionPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.itemLabel,
+                      widget.label,
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
