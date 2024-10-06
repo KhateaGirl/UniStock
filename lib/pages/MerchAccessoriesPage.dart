@@ -14,7 +14,13 @@ class MerchAccessoriesPage extends StatefulWidget {
 }
 
 class _MerchAccessoriesPageState extends State<MerchAccessoriesPage> {
-  // Fetch data from Firestore
+  final List<String> itemsWithoutSizes = [
+    'water bottle',
+    'wearable pin',
+    'sti face mask',
+    'laces'
+  ];
+
   Stream<QuerySnapshot> _fetchMerchData() {
     return FirebaseFirestore.instance
         .collection('Inventory_stock')
@@ -107,18 +113,22 @@ class _MerchAccessoriesPageState extends State<MerchAccessoriesPage> {
                   if (!snapshot.hasData) {
                     return Center(child: CircularProgressIndicator());
                   }
+
                   var data = snapshot.data!.data() as Map<String, dynamic>;
 
+                  // Ensure that each item has a price and other necessary fields
                   var items = data.entries.map((entry) {
+                    var itemData = entry.value as Map<String, dynamic>;
                     return {
                       'label': entry.key,
-                      'imagePath': entry.value['imagePath'],
-                      'price': entry.value['price'],
+                      'imagePath': itemData['imagePath'] ?? '', // Provide a default empty string if imagePath is missing
+                      'price': itemData['price'] ?? 0, // Provide a default price of 0 if missing
                     };
                   }).toList();
+
                   return buildItemGrid(context, items);
                 },
-              ),
+              )
             ],
           ),
         ),
@@ -144,23 +154,22 @@ class _MerchAccessoriesPageState extends State<MerchAccessoriesPage> {
     );
   }
 
-  Widget buildItemCard(BuildContext context, String imagePath, String label,
-      int price) {
+  Widget buildItemCard(BuildContext context, String imagePath, String label, int price) {
+    final bool requiresSizeSelection = !itemsWithoutSizes.contains(label.toLowerCase());
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) =>
-                DetailSelectionMerch(
-                  itemLabel: label,
-                  itemSize: '',
-                  imagePath: imagePath,
-                  price: price,
-                  quantity: 1,
-                  currentProfileInfo: widget
-                      .currentProfileInfo,
-                ),
+            builder: (context) => DetailSelectionMerch(
+              itemLabel: label,
+              itemSize: requiresSizeSelection ? '' : null,
+              imagePath: imagePath,
+              price: price, // Fallback value of 0 will be used if price is missing
+              quantity: 1,
+              currentProfileInfo: widget.currentProfileInfo,
+            ),
           ),
         );
       },
@@ -169,13 +178,18 @@ class _MerchAccessoriesPageState extends State<MerchAccessoriesPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Wrap image in Expanded or set fixed height
             Expanded(
-              child: Image.network(
+              child: imagePath.isNotEmpty
+                  ? Image.network(
                 imagePath,
                 fit: BoxFit.cover,
                 height: 100,
                 width: double.infinity,
+              )
+                  : Container(
+                height: 100,
+                color: Colors.grey,
+                child: Icon(Icons.image, color: Colors.white), // Default placeholder when image is missing
               ),
             ),
             SizedBox(height: 8),

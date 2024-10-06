@@ -290,42 +290,56 @@ class _CartPageState extends State<CartPage> {
       final ordersCollection = firestore.collection('users').doc(user.uid).collection('orders');
       final WriteBatch batch = firestore.batch();
 
+      List<Map<String, dynamic>> orderItems = [];
+
+      // Collect all selected items from the cart
       for (CartItem item in cartItems) {
         if (item.selected) {
+          // Add each selected item to the orderItems list
+          orderItems.add({
+            'itemLabel': item.itemLabel,
+            'itemSize': item.selectedSize ?? '',
+            'imagePath': item.imagePath,
+            'price': item.price, // Use the stored total price
+            'quantity': item.quantity,
+            'category': item.category,
+            'courseLabel': item.courseLabel,
+          });
+
+          // Prepare to delete the item from the cart after checkout
           for (DocumentReference cartDocRef in item.documentReferences) {
-            batch.update(cartDocRef, {'status': 'bought'});
             batch.delete(cartDocRef);
-
-            // Create a new order document
-            final orderDocRef = ordersCollection.doc();
-            batch.set(orderDocRef, {
-              'itemLabel': item.itemLabel,
-              'itemSize': item.selectedSize ?? '',
-              'imagePath': item.imagePath,
-              'price': item.price, // Use the stored total price
-              'quantity': item.quantity,
-              'orderDate': FieldValue.serverTimestamp(),
-              'category': item.category,
-              'courseLabel': item.courseLabel,
-            });
-
-            // Call showNotification with 5 arguments, including the document ID
-            await notificationService.showNotification(
-              user.uid,
-              item.itemLabel.hashCode,
-              'Item Purchased',
-              'Your Reservation for ${item.itemLabel} has been successfully processed.',
-              orderDocRef.id, // Pass the document ID as the fifth argument
-            );
           }
         }
       }
 
-      try {
-        await batch.commit();
-        print("Checked out items successfully and removed from cart.");
-      } catch (e) {
-        print("Failed to complete batch operation: $e");
+      if (orderItems.isNotEmpty) {
+        // Create a new order document (receipt) in Firestore
+        final orderDocRef = ordersCollection.doc();
+        batch.set(orderDocRef, {
+          'items': orderItems,
+          'orderDate': FieldValue.serverTimestamp(),
+          'status': 'pending',
+        });
+
+        // Commit the batch write
+        try {
+          await batch.commit();
+          print("Checked out items successfully and removed from cart.");
+
+          // Call showNotification with a notification for the whole order
+          await notificationService.showNotification(
+            user.uid,
+            orderDocRef.id.hashCode,
+            'Order Placed',
+            'Your order with Receipt ID ${orderDocRef.id} has been successfully processed.',
+            orderDocRef.id, // Pass the document ID as the fifth argument
+          );
+        } catch (e) {
+          print("Failed to complete batch operation: $e");
+        }
+      } else {
+        print("No items selected for checkout.");
       }
     } else {
       print("User not logged in");
