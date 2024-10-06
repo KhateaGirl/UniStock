@@ -184,7 +184,16 @@ class _SHSUniformsPageState extends State<SHSUniformsPage> {
   }
 
   Widget buildItem(BuildContext context, String id, String imagePath,
-      String label, String price, String category) {
+      String label, String? price, String category) {
+    int parsedPrice = 0; // Default value if price is not available
+    if (price != null && price.isNotEmpty) {
+      try {
+        parsedPrice = int.parse(price.replaceAll(RegExp(r'[^\d]'), '')); // Remove non-numeric characters
+      } catch (e) {
+        print('Error parsing price: $e');
+      }
+    }
+
     return InkWell(
       onTap: () {
         Navigator.push(
@@ -194,7 +203,7 @@ class _SHSUniformsPageState extends State<SHSUniformsPage> {
               itemLabel: label,
               itemSize: category == 'senior_high_items' ? '' : null,
               imagePath: imagePath, // Pass Firebase Storage URL
-              price: int.parse(price.substring(1)), // Remove ₱ and parse int
+              price: parsedPrice, // Use the parsed price value
               quantity: 1,
               currentProfileInfo: widget.currentProfileInfo, // Pass the profile info
             ),
@@ -236,7 +245,7 @@ class _SHSUniformsPageState extends State<SHSUniformsPage> {
               ),
               SizedBox(height: 4),
               Text(
-                price,
+                '₱$parsedPrice',
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.black,

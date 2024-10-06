@@ -7,7 +7,7 @@ class DetailSelectionSHS extends StatefulWidget {
   final String itemLabel;
   final String? itemSize;
   final String imagePath;
-  final int price;
+  final int price; // General price
   final int quantity;
   final ProfileInfo currentProfileInfo;
 
@@ -29,6 +29,7 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
   String _selectedSize = '';
   List<String> availableSizes = []; // List to store available sizes
   Map<String, int> sizeQuantities = {}; // Track available quantities by size
+  Map<String, int?> sizePrices = {}; // Track prices by size, nullable
 
   @override
   void initState() {
@@ -58,11 +59,13 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
           // Debug print to see what sizes are fetched
           print('Fetched sizes from Firestore: $sizesMap');
 
-          // Extract available sizes and quantities
+          // Extract available sizes, quantities, and prices
           setState(() {
             availableSizes = sizesMap.keys.toList(); // Extract size labels like '2XL', '5XL'
             sizeQuantities = sizesMap.map((size, details) =>
                 MapEntry(size, details['quantity'] ?? 0)); // Extract quantities
+            sizePrices = sizesMap.map((size, details) =>
+                MapEntry(size, details['price'] != null ? details['price'] as int : null)); // Extract prices if available
 
             // Filter available sizes to include only those with quantity > 0
             availableSizes = availableSizes.where((size) => sizeQuantities[size]! > 0).toList();
@@ -75,6 +78,7 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
           setState(() {
             availableSizes = [];
             sizeQuantities = {};
+            sizePrices = {};
           });
         }
       } else {
@@ -85,12 +89,12 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
       setState(() {
         availableSizes = [];
         sizeQuantities = {};
+        sizePrices = {};
       });
     }
   }
 
   bool get disableButtons {
-
     if (availableSizes.isEmpty) {
       return true; // No sizes are available, cannot proceed
     }
@@ -110,9 +114,9 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
     if (_selectedSize.isEmpty) {
       showSizeNotSelectedDialog();
     } else {
-      // Calculate the total price by multiplying the unit price by the quantity
-      final int unitPrice = widget.price; // Define the unit price
-      final int totalPrice = widget.price * _currentQuantity;
+      final int? sizePrice = sizePrices[_selectedSize];
+      final int unitPrice = sizePrice ?? widget.price; // Use size-specific price if available
+      final int totalPrice = unitPrice * _currentQuantity;
 
       // Debug information before proceeding to checkout
       print("Debug: Checkout initiated - Item: ${widget.itemLabel}, Size: $_selectedSize, Quantity: $_currentQuantity, Total Price: $totalPrice, Category: senior_high_items");
@@ -139,11 +143,11 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
     if (_selectedSize.isEmpty) {
       showSizeNotSelectedDialog();
     } else {
-      // Retrieve the current user's ID
       String userId = widget.currentProfileInfo.userId;
 
-      // Calculate the total price for the item
-      final int totalPrice = widget.price * _currentQuantity;
+      final int? sizePrice = sizePrices[_selectedSize];
+      final int unitPrice = sizePrice ?? widget.price; // Use size-specific price if available
+      final int totalPrice = unitPrice * _currentQuantity;
 
       // Debug information before adding to cart
       print("Debug: Adding to cart - Item: ${widget.itemLabel}, Size: $_selectedSize, Quantity: $_currentQuantity, Total Price: $totalPrice, Category: senior_high_items");
@@ -173,7 +177,6 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
     }
   }
 
-
   void showSizeNotSelectedDialog() {
     showDialog(
       context: context,
@@ -196,6 +199,9 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
 
   @override
   Widget build(BuildContext context) {
+    final int? sizePrice = sizePrices[_selectedSize];
+    final int displayPrice = sizePrice ?? widget.price; // Use size-specific price if available
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.itemLabel),
@@ -222,7 +228,7 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
               ],
               SizedBox(height: 10),
               Text(
-                'Price: ₱${widget.price}', // Keep it as int
+                'Price: ₱$displayPrice', // Update price based on size selection
                 style: TextStyle(fontSize: 20),
               ),
               _buildQuantitySelector(),
@@ -264,7 +270,7 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
       items: availableSizes.map((size) {
         return DropdownMenuItem(
           value: size,
-          child: Text('$size (${sizeQuantities[size] ?? 0} available)'),
+          child: Text('$size'),
         );
       }).toList(),
       onChanged: (value) {

@@ -9,7 +9,7 @@ class DetailSelectionCOL extends StatefulWidget {
   final String courseLabel;
   final String? itemSize;
   final String imagePath;
-  final int price;
+  final int price; // General price
   final int quantity;
   final ProfileInfo currentProfileInfo;
 
@@ -32,8 +32,9 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
   int _currentQuantity = 1;
   String _selectedSize = '';
   List<String> availableSizes = [];
-  String? category;
-  String courseLabel = '';
+  Map<String, int?> sizePrices = {}; // Track prices by size
+  Map<String, int> sizeQuantities = {}; // Track quantities by size
+  int _displayPrice = 0; // Display price based on the selected size
   int _availableQuantity = 0; // Track the available quantity for the selected size
 
   @override
@@ -41,20 +42,19 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
     super.initState();
     _currentQuantity = widget.quantity;
     _selectedSize = widget.itemSize ?? '';
-    courseLabel = widget.courseLabel;
+    _displayPrice = widget.price; // Set the default price to the general price
 
     _fetchItemDetailsFromFirestore();
   }
 
   Future<void> _fetchItemDetailsFromFirestore() async {
     try {
-      String formattedCourseLabel = widget.courseLabel.replaceAll('&', 'and');
-      print('Debug: Fetching document for course: $formattedCourseLabel, item ID: ${widget.itemId}');
+      String courseLabel = widget.courseLabel;
 
       DocumentSnapshot doc = await FirebaseFirestore.instance
           .collection('Inventory_stock')
           .doc('college_items')
-          .collection(widget.courseLabel) // Instead of using formattedCourseLabel
+          .collection(courseLabel)
           .doc(widget.itemId)
           .get();
 
@@ -62,7 +62,6 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
         Map<String, dynamic>? data = doc.data() as Map<String, dynamic>?;
 
         if (data == null) {
-          print('Debug: Document data is null for itemId: ${widget.itemId}');
           setState(() {
             availableSizes = [];
             _selectedSize = '';
@@ -71,74 +70,70 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
           return;
         }
 
-        print('Debug: Fetched document data: $data');
+        if (data.containsKey('sizes') && data['sizes'] is Map<String, dynamic>) {
+          var sizesData = data['sizes'] as Map<String, dynamic>;
 
-        if (data.containsKey('sizes')) {
-          var sizesData = data['sizes'];
-
-          if (sizesData is Map<String, dynamic>) {
-            List<String> sizesList = sizesData.keys.toList();
-            int initialQuantity = 0;
-
-            // Select a default size if none is selected
-            String defaultSize = sizesList.isNotEmpty ? sizesList[0] : '';
-
-            if (defaultSize.isNotEmpty) {
-              initialQuantity = sizesData[defaultSize]['quantity'] ?? 0;
+          // Extract size prices and quantities
+          sizePrices = sizesData.map((size, details) {
+            if (details is Map<String, dynamic> && details.containsKey('price')) {
+              return MapEntry(size, details['price'] != null ? details['price'] as int? : null);
+            } else {
+              return MapEntry(size, null); // Price is null if not specified
             }
+          });
 
-            setState(() {
-              availableSizes = sizesList;
-              _selectedSize = _selectedSize.isEmpty ? defaultSize : _selectedSize;
-              _availableQuantity = initialQuantity;
-              print('Debug: Available sizes updated: $availableSizes, Default size: $_selectedSize, Quantity for default size: $_availableQuantity');
-            });
-          } else {
-            throw ('The "sizes" field exists but is not a Map for itemId: ${widget.itemId}');
-          }
+          sizeQuantities = sizesData.map((size, details) {
+            if (details is Map<String, dynamic> && details.containsKey('quantity')) {
+              return MapEntry(size, details['quantity'] ?? 0);
+            } else {
+              return MapEntry(size, 0);
+            }
+          });
+
+          String defaultSize = sizesData.keys.isNotEmpty ? sizesData.keys.first : '';
+          int initialQuantity = defaultSize.isNotEmpty ? sizeQuantities[defaultSize] ?? 0 : 0;
+          int initialPrice = defaultSize.isNotEmpty && sizePrices[defaultSize] != null ? sizePrices[defaultSize]! : widget.price;
+
+          setState(() {
+            availableSizes = sizesData.keys.toList();
+            _selectedSize = _selectedSize.isEmpty ? defaultSize : _selectedSize;
+            _availableQuantity = initialQuantity;
+            _displayPrice = initialPrice; // Set display price to initial size price
+          });
         } else {
           setState(() {
             availableSizes = [];
             _selectedSize = '';
-            _availableQuantity = 0;
+            _availableQuantity = 1;
+            _displayPrice = data['price'] ?? widget.price; // Use general price
           });
-          print('Debug: No sizes available for itemId: ${widget.itemId}');
         }
-
-        setState(() {
-          category = data['category'] ?? 'college_items';
-          courseLabel = widget.courseLabel;
-        });
       } else {
-        print('Debug: Document does not exist for itemId: ${widget.itemId}');
         setState(() {
           availableSizes = [];
           _selectedSize = '';
           _availableQuantity = 0;
-          category = 'Unknown';
         });
       }
     } catch (e) {
-      print('Error fetching item details: $e');
       setState(() {
         availableSizes = [];
         _selectedSize = '';
         _availableQuantity = 0;
-        category = 'Unknown';
       });
     }
   }
 
   bool get disableButtons {
     if (availableSizes.isEmpty) {
-      return true; // No sizes are available, cannot proceed
+      return true;
     }
 
     if (_selectedSize.isEmpty) {
-      return true; // Size selection is required but not selected
+      return true;
     }
 
-    return false; // All conditions are met, buttons can be enabled
+    return false;
   }
 
   void showSizeNotSelectedDialog() {
@@ -165,11 +160,10 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
     if (availableSizes.isNotEmpty && _selectedSize.isEmpty) {
       showSizeNotSelectedDialog();
     } else {
-      final int unitPrice = widget.price;
-      final int totalPrice = widget.price * _currentQuantity; // Calculate the total price
+      final int totalPrice = _displayPrice * _currentQuantity; // Calculate the total price
 
       // Debug information before checkout
-      print("Debug: Checkout initiated - Item: ${widget.itemLabel}, Size: $_selectedSize, Quantity: $_currentQuantity, Total Price: $totalPrice, Category: ${category ?? 'college_items'}");
+      print("Debug: Checkout initiated - Item: ${widget.itemLabel}, Size: $_selectedSize, Quantity: $_currentQuantity, Total Price: $totalPrice");
 
       Navigator.push(
         context,
@@ -178,10 +172,10 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
             itemLabel: widget.itemLabel,
             itemSize: availableSizes.isNotEmpty ? _selectedSize : null,
             imagePath: widget.imagePath,
-            unitPrice: unitPrice,
+            unitPrice: _displayPrice,  // Use the size-specific price
             price: totalPrice,  // Store the total price in the `price` field itself
             quantity: _currentQuantity,
-            category: category ?? 'college_items',  // Pass the correct category here
+            category: 'college_items',  // Pass the correct category here
             currentProfileInfo: widget.currentProfileInfo,
           ),
         ),
@@ -194,13 +188,12 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
       showSizeNotSelectedDialog();
     } else {
       String userId = widget.currentProfileInfo.userId;
-      final String resolvedCategory = category ?? 'Unknown'; // Ensure category has a default value
 
       // Calculate the total price before adding to the cart
-      final int totalPrice = widget.price * _currentQuantity;
+      final int totalPrice = _displayPrice * _currentQuantity;
 
       // Debug information before adding to cart
-      print("Debug: Adding to cart - Item: ${widget.itemLabel}, Size: $_selectedSize, Quantity: $_currentQuantity, Total Price: $totalPrice, Category: $resolvedCategory");
+      print("Debug: Adding to cart - Item: ${widget.itemLabel}, Size: $_selectedSize, Quantity: $_currentQuantity, Total Price: $totalPrice");
 
       CollectionReference cartRef = FirebaseFirestore.instance
           .collection('users')
@@ -213,8 +206,8 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
         'imagePath': widget.imagePath,
         'price': totalPrice, // Store the total price in the `price` field
         'quantity': _currentQuantity,
-        'category': resolvedCategory,  // Store the correct category
-        'courseLabel': courseLabel,
+        'category': 'college_items',  // Store the correct category
+        'courseLabel': widget.courseLabel,
         'status': 'pending',
         'timestamp': FieldValue.serverTimestamp(),
       });
@@ -253,7 +246,7 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
               ],
               SizedBox(height: 10),
               Text(
-                'Price: ₱${widget.price}',
+                'Price: ₱$_displayPrice', // Display the dynamic price based on the selected size
                 style: TextStyle(fontSize: 20),
               ),
               _buildQuantitySelector(),
@@ -289,45 +282,25 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
   }
 
   Widget _buildSizeSelector() {
-    if (availableSizes.isEmpty) {
-      return Text('No available sizes', style: TextStyle(color: Colors.grey));
-    }
-
-    print('Debug: Building size selector with available sizes: $availableSizes');
-
-    return DropdownButton<String>(
+    return availableSizes.isEmpty
+        ? Text(
+      'This item does not have sizes available',
+      style: TextStyle(color: Colors.grey, fontSize: 16),
+    )
+        : DropdownButton<String>(
       value: _selectedSize.isEmpty ? null : _selectedSize,
       hint: Text('Select Size'),
       items: availableSizes.map((size) {
         return DropdownMenuItem(
           value: size,
-          child: Text(size),
+          child: Text('$size'),
         );
       }).toList(),
       onChanged: (value) {
         setState(() {
           _selectedSize = value ?? '';
-          print('Debug: Selected size changed to: $_selectedSize');
-
-          // Fetch the available quantity for the selected size
-          String formattedCourseLabel = widget.courseLabel.replaceAll('&', 'and');
-          FirebaseFirestore.instance
-              .collection('Inventory_stock')
-              .doc('college_items')
-              .collection(formattedCourseLabel)
-              .doc(widget.itemId)
-              .get()
-              .then((doc) {
-            if (doc.exists) {
-              var sizesData = doc['sizes'];
-              if (sizesData != null && sizesData is Map<String, dynamic>) {
-                setState(() {
-                  _availableQuantity = sizesData[_selectedSize]['quantity'] ?? 0;
-                  print('Debug: Available quantity for size $_selectedSize is $_availableQuantity');
-                });
-              }
-            }
-          });
+          _displayPrice = sizePrices[_selectedSize] ?? widget.price; // Use fallback price if null
+          _availableQuantity = sizeQuantities[_selectedSize] ?? 0;
         });
       },
     );
@@ -350,7 +323,7 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
         ),
         Text('$_currentQuantity'),
         IconButton(
-          onPressed: _currentQuantity < _availableQuantity // Limit by available stock
+          onPressed: _currentQuantity < _availableQuantity
               ? () {
             setState(() {
               _currentQuantity++;
