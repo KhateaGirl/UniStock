@@ -32,8 +32,7 @@ class _MerchSelectionPageState extends State<MerchSelectionPage> {
   void initState() {
     super.initState();
     _currentQuantity = widget.quantity;
-    _selectedSize =
-        widget.itemSize; // Initialize selected size from widget's initial value
+    _selectedSize = widget.itemSize;
   }
 
   void showSizeNotSelectedDialog() {
