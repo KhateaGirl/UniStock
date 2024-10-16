@@ -31,15 +31,15 @@ class _HomePageState extends State<HomePage> {
     _fetchAnnouncementImages();
   }
 
-  // Fetch announcement image URLs from Firestore
   Future<void> _fetchAnnouncementImages() async {
     try {
-      String adminDocumentId = 'ZmjXRodEmi3LOaYA10tH';  // Adjust this if necessary
+      String adminDocumentId = 'ZmjXRodEmi3LOaYA10tH';
 
       QuerySnapshot snapshot = await FirebaseFirestore.instance
           .collection('admin')
           .doc(adminDocumentId)
           .collection('announcements')
+          .orderBy('announcement_label', descending: false)
           .get();
 
       List<String> urls = snapshot.docs.map((doc) {
@@ -108,20 +108,19 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator()) // Loading indicator while fetching data
+          ? Center(child: CircularProgressIndicator())
           : Column(
         children: <Widget>[
-          // PageView for Announcements
           Container(
             height: isMobile
                 ? MediaQuery.of(context).size.height * 0.25
-                : MediaQuery.of(context).size.height * 0.3, // Adjust height based on screen size
+                : MediaQuery.of(context).size.height * 0.3,
             width: double.infinity,
             child: _imageUrls.isNotEmpty
                 ? PageView.builder(
               onPageChanged: (index) {
                 setState(() {
-                  _currentIndex = index; // Update current index when the page changes
+                  _currentIndex = index;
                 });
               },
               itemCount: _imageUrls.length,
@@ -130,7 +129,7 @@ class _HomePageState extends State<HomePage> {
                   width: MediaQuery.of(context).size.width,
                   child: Image.network(
                     _imageUrls[index],
-                    fit: BoxFit.cover, // Make the image cover the entire container
+                    fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       return Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -146,7 +145,6 @@ class _HomePageState extends State<HomePage> {
             )
                 : Center(child: Text('No announcements available')),
           ),
-          // Dots Indicator for PageView
           if (_imageUrls.isNotEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
