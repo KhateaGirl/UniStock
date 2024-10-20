@@ -32,7 +32,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: Color(0xFF046be0),
       body: Center(
-        child: Padding(
+        child: SingleChildScrollView( // Wrap with SingleChildScrollView to prevent overflow
           padding: const EdgeInsets.all(16.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,

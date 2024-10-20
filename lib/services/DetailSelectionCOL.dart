@@ -9,7 +9,7 @@ class DetailSelectionCOL extends StatefulWidget {
   final String courseLabel;
   final String? itemSize;
   final String imagePath;
-  final int price; // General price
+  final int price;
   final int quantity;
   final ProfileInfo currentProfileInfo;
 
@@ -32,17 +32,17 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
   int _currentQuantity = 1;
   String _selectedSize = '';
   List<String> availableSizes = [];
-  Map<String, int?> sizePrices = {}; // Track prices by size
-  Map<String, int> sizeQuantities = {}; // Track quantities by size
-  int _displayPrice = 0; // Display price based on the selected size
-  int _availableQuantity = 0; // Track the available quantity for the selected size
+  Map<String, int?> sizePrices = {};
+  Map<String, int> sizeQuantities = {};
+  int _displayPrice = 0;
+  int _availableQuantity = 0;
 
   @override
   void initState() {
     super.initState();
     _currentQuantity = widget.quantity;
     _selectedSize = widget.itemSize ?? '';
-    _displayPrice = widget.price; // Set the default price to the general price
+    _displayPrice = widget.price;
 
     _fetchItemDetailsFromFirestore();
   }
@@ -73,12 +73,11 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
         if (data.containsKey('sizes') && data['sizes'] is Map<String, dynamic>) {
           var sizesData = data['sizes'] as Map<String, dynamic>;
 
-          // Extract size prices and quantities
           sizePrices = sizesData.map((size, details) {
             if (details is Map<String, dynamic> && details.containsKey('price')) {
               return MapEntry(size, details['price'] != null ? details['price'] as int? : null);
             } else {
-              return MapEntry(size, null); // Price is null if not specified
+              return MapEntry(size, null);
             }
           });
 
@@ -98,14 +97,14 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
             availableSizes = sizesData.keys.toList();
             _selectedSize = _selectedSize.isEmpty ? defaultSize : _selectedSize;
             _availableQuantity = initialQuantity;
-            _displayPrice = initialPrice; // Set display price to initial size price
+            _displayPrice = initialPrice;
           });
         } else {
           setState(() {
             availableSizes = [];
             _selectedSize = '';
             _availableQuantity = 1;
-            _displayPrice = data['price'] ?? widget.price; // Use general price
+            _displayPrice = data['price'] ?? widget.price;
           });
         }
       } else {
@@ -160,10 +159,7 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
     if (availableSizes.isNotEmpty && _selectedSize.isEmpty) {
       showSizeNotSelectedDialog();
     } else {
-      final int totalPrice = _displayPrice * _currentQuantity; // Calculate the total price
-
-      // Debug information before checkout
-      print("Debug: Checkout initiated - Item: ${widget.label}, Size: $_selectedSize, Quantity: $_currentQuantity, Total Price: $totalPrice");
+      final int totalPrice = _displayPrice * _currentQuantity;
 
       Navigator.push(
         context,
@@ -172,10 +168,10 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
             label: widget.label,
             itemSize: availableSizes.isNotEmpty ? _selectedSize : null,
             imagePath: widget.imagePath,
-            unitPrice: _displayPrice,  // Use the size-specific price
-            price: totalPrice,  // Store the total price in the `price` field itself
+            unitPrice: _displayPrice,
+            price: totalPrice,
             quantity: _currentQuantity,
-            category: 'college_items',  // Pass the correct category here
+            category: 'college_items',
             currentProfileInfo: widget.currentProfileInfo,
           ),
         ),
@@ -189,11 +185,7 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
     } else {
       String userId = widget.currentProfileInfo.userId;
 
-      // Calculate the total price before adding to the cart
       final int totalPrice = _displayPrice * _currentQuantity;
-
-      // Debug information before adding to cart
-      print("Debug: Adding to cart - Item: ${widget.label}, Size: $_selectedSize, Quantity: $_currentQuantity, Total Price: $totalPrice");
 
       CollectionReference cartRef = FirebaseFirestore.instance
           .collection('users')
@@ -204,9 +196,9 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
         'label': widget.label,
         'itemSize': availableSizes.isNotEmpty ? _selectedSize : null,
         'imagePath': widget.imagePath,
-        'price': totalPrice, // Store the total price in the `price` field
+        'price': totalPrice,
         'quantity': _currentQuantity,
-        'category': 'college_items',  // Store the correct category
+        'category': 'college_items',
         'courseLabel': widget.courseLabel,
         'status': 'pending',
         'timestamp': FieldValue.serverTimestamp(),
@@ -216,6 +208,33 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
         SnackBar(content: Text('Item added to cart!')),
       );
     }
+  }
+
+  void handlePreOrder() async {
+    String userId = widget.currentProfileInfo.userId;
+
+    final int totalPrice = _displayPrice * _currentQuantity;
+
+    CollectionReference preOrderRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('preorders');
+
+    await preOrderRef.add({
+      'label': widget.label,
+      'itemSize': availableSizes.isNotEmpty ? _selectedSize : null,
+      'imagePath': widget.imagePath,
+      'price': totalPrice,
+      'quantity': _currentQuantity,
+      'category': 'college_items',
+      'courseLabel': widget.courseLabel,
+      'status': 'pre-ordered',
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Item added to pre-order!')),
+    );
   }
 
   @override
@@ -246,7 +265,7 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
               ],
               SizedBox(height: 10),
               Text(
-                'Price: ₱$_displayPrice', // Display the dynamic price based on the selected size
+                'Price: ₱$_displayPrice',
                 style: TextStyle(fontSize: 20),
               ),
               _buildQuantitySelector(),
@@ -262,6 +281,17 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
                   OutlinedButton(
                     onPressed: disableButtons ? null : handleAddToCart,
                     child: Text('Add to Cart'),
+                  ),
+                  SizedBox(width: 10),
+                  ElevatedButton(
+                    onPressed: handlePreOrder, // Always enabled
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFF4CAF50),
+                    ),
+                    child: Text(
+                      'Pre-order',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ],
               ),
@@ -299,7 +329,7 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
       onChanged: (value) {
         setState(() {
           _selectedSize = value ?? '';
-          _displayPrice = sizePrices[_selectedSize] ?? widget.price; // Use fallback price if null
+          _displayPrice = sizePrices[_selectedSize] ?? widget.price;
           _availableQuantity = sizeQuantities[_selectedSize] ?? 0;
         });
       },
@@ -315,7 +345,6 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
               ? () {
             setState(() {
               _currentQuantity--;
-              print('Quantity decreased: $_currentQuantity');
             });
           }
               : null,
@@ -327,7 +356,6 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
               ? () {
             setState(() {
               _currentQuantity++;
-              print('Quantity increased: $_currentQuantity');
             });
           }
               : null,

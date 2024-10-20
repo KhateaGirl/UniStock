@@ -27,27 +27,25 @@ class DetailSelectionMerch extends StatefulWidget {
 class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
   int _currentQuantity = 1;
   String _selectedSize = '';
-  List<String> availableSizes = []; // List to store available sizes
-  Map<String, int> sizeQuantities = {}; // Track available quantities by size
-  Map<String, int?> sizePrices = {}; // Track prices by size
+  List<String> availableSizes = [];
+  Map<String, int> sizeQuantities = {};
+  Map<String, int?> sizePrices = {};
 
-  int _displayPrice = 0; // Display price based on the selected size
-  int _availableQuantity = 0; // Track available quantity for the selected size
+  int _displayPrice = 0;
+  int _availableQuantity = 0;
 
   @override
   void initState() {
     super.initState();
     _currentQuantity = widget.quantity;
     _selectedSize = widget.itemSize ?? '';
-    _displayPrice = widget.price; // Set the default price to the general price
+    _displayPrice = widget.price;
 
     _fetchSizesFromFirestore();
   }
 
-
   Future<void> _fetchSizesFromFirestore() async {
     try {
-      // Check if the item does not need a size selector
       if (['water bottle', 'wearable pin', 'sti face mask', 'laces']
           .contains(widget.label.toLowerCase())) {
         setState(() {
@@ -56,13 +54,11 @@ class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
         return;
       }
 
-      // Fetch the item document from Firestore
       DocumentSnapshot doc = await FirebaseFirestore.instance
           .collection('Inventory_stock')
           .doc('Merch & Accessories')
           .get();
 
-      // Check if the document exists and fetch the sizes
       if (doc.exists && doc.data() != null) {
         var data = doc.data() as Map<String, dynamic>;
         if (data.containsKey(widget.label) &&
@@ -74,7 +70,7 @@ class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
               return MapEntry(size, details['quantity'] ?? 0);
             });
             sizePrices = sizesMap.map((size, details) {
-              return MapEntry(size, details['price'] != null ? details['price'] as int? : widget.price); // Fallback to widget.price if null
+              return MapEntry(size, details['price'] != null ? details['price'] as int? : widget.price);
             });
           });
         } else {
@@ -95,11 +91,9 @@ class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
     }
   }
 
-  bool get showSizeOptions =>
-      widget.itemSize != null && availableSizes.isNotEmpty;
+  bool get showSizeOptions => widget.itemSize != null && availableSizes.isNotEmpty;
 
   bool get disableButtons {
-    // Disable buttons if no size selected, no available sizes, or no quantity for the selected size
     return availableSizes.isEmpty ||
         (_selectedSize.isNotEmpty && (sizeQuantities[_selectedSize] ?? 0) < _currentQuantity);
   }
@@ -128,11 +122,8 @@ class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
     if (showSizeOptions && _selectedSize.isEmpty) {
       showSizeNotSelectedDialog();
     } else {
-      final int unitPrice = _displayPrice; // Use the updated _displayPrice that takes size or fallback into account
+      final int unitPrice = _displayPrice;
       final int totalPrice = unitPrice * _currentQuantity;
-
-      // Debug information before proceeding to checkout
-      print("Debug: Checkout initiated - Item: ${widget.label}, Size: $_selectedSize, Quantity: $_currentQuantity, Total Price: $totalPrice, Category: merch_and_accessories");
 
       Navigator.push(
         context,
@@ -158,11 +149,8 @@ class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
     } else {
       String userId = widget.currentProfileInfo.userId;
 
-      final int unitPrice = _displayPrice; // Use _displayPrice to account for selected size or fallback
+      final int unitPrice = _displayPrice;
       final int totalPrice = unitPrice * _currentQuantity;
-
-      // Debug information before adding to cart
-      print("Debug: Adding to cart - Item: ${widget.label}, Size: $_selectedSize, Quantity: $_currentQuantity, Total Price: $totalPrice, Category: merch_and_accessories");
 
       CollectionReference cartRef = FirebaseFirestore.instance
           .collection('users')
@@ -183,6 +171,38 @@ class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Item added to cart!')),
+      );
+    }
+  }
+
+  void handlePreOrder() async {
+    if (showSizeOptions && _selectedSize.isEmpty) {
+      showSizeNotSelectedDialog();
+    } else {
+      String userId = widget.currentProfileInfo.userId;
+
+      final int unitPrice = _displayPrice;
+      final int totalPrice = unitPrice * _currentQuantity;
+
+      CollectionReference preOrderRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('preorders');
+
+      await preOrderRef.add({
+        'label': widget.label,
+        'itemSize': _selectedSize,
+        'imagePath': widget.imagePath,
+        'price': unitPrice,
+        'quantity': _currentQuantity,
+        'totalPrice': totalPrice,
+        'category': 'merch_and_accessories',
+        'status': 'pre-ordered',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Item added to pre-order!')),
       );
     }
   }
@@ -215,7 +235,7 @@ class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
               ],
               SizedBox(height: 10),
               Text(
-                'Price: ₱$_displayPrice', // Display the dynamic price based on the selected size
+                'Price: ₱$_displayPrice',
                 style: TextStyle(fontSize: 20),
               ),
               _buildQuantitySelector(),
@@ -231,6 +251,17 @@ class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
                   OutlinedButton(
                     onPressed: disableButtons ? null : handleAddToCart,
                     child: Text('Add to Cart'),
+                  ),
+                  SizedBox(width: 10),
+                  ElevatedButton(
+                    onPressed: handlePreOrder,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFF4CAF50),
+                    ),
+                    child: Text(
+                      'Pre-order',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ],
               ),
@@ -250,7 +281,7 @@ class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
     );
   }
 
-  Widget _buildSizeSelector () {
+  Widget _buildSizeSelector() {
     return DropdownButton<String>(
       value: _selectedSize.isEmpty ? null : _selectedSize,
       hint: Text('Select Size'),
@@ -263,7 +294,7 @@ class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
       onChanged: (value) {
         setState(() {
           _selectedSize = value ?? '';
-          _displayPrice = sizePrices[_selectedSize] ?? widget.price; // Update price based on size or fallback
+          _displayPrice = sizePrices[_selectedSize] ?? widget.price;
           _availableQuantity = sizeQuantities[_selectedSize] ?? 0;
         });
       },
@@ -288,7 +319,6 @@ class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
         IconButton(
           onPressed: () {
             setState(() {
-              // Only increase if the selected size has enough quantity available
               if (_selectedSize.isNotEmpty && (sizeQuantities[_selectedSize] ?? 0) > _currentQuantity) {
                 _currentQuantity++;
               }
