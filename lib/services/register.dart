@@ -14,7 +14,7 @@ class _RegisterPageState extends State<RegisterPage> {
   TextEditingController name = TextEditingController();
   TextEditingController email = TextEditingController();
   TextEditingController password = TextEditingController();
-  TextEditingController studentId = TextEditingController(); // Added this line
+  TextEditingController studentId = TextEditingController();
   bool _obscureText = true;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;

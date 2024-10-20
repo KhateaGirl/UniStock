@@ -120,6 +120,7 @@ class _PreOrderPageState extends State<PreOrderPage> {
       final WriteBatch batch = firestore.batch();
 
       List<Map<String, dynamic>> preOrderDetails = [];
+      List<CartItem> selectedItemsForAdminNotification = [];
 
       for (CartItem item in preOrderItems) {
         if (item.selected) {
@@ -132,6 +133,8 @@ class _PreOrderPageState extends State<PreOrderPage> {
             'category': item.category,
             'courseLabel': item.courseLabel,
           });
+
+          selectedItemsForAdminNotification.add(item);
 
           for (DocumentReference preOrderDocRef in item.documentReferences) {
             batch.delete(preOrderDocRef);
@@ -155,11 +158,15 @@ class _PreOrderPageState extends State<PreOrderPage> {
             user.uid,
             preOrderDocRef.id.hashCode,
             'Pre-order Confirmed',
-            'Your pre-order with Receipt ID ${preOrderDocRef.id} has been confirmed.',
+            'Your pre-order has been confirmed.',
             preOrderDocRef.id,
           );
 
-          await _notifyAdmin(preOrderDocRef.id, user.uid);
+          // Fetch the user's name from the Firestore
+          DocumentSnapshot userDoc = await firestore.collection('users').doc(user.uid).get();
+          String userName = userDoc['name'] ?? 'Unknown User';
+
+          await _notifyAdmin(userName, user.uid, selectedItemsForAdminNotification);
 
         } catch (e) {
           print("Failed to complete pre-order operation: $e");
@@ -172,17 +179,34 @@ class _PreOrderPageState extends State<PreOrderPage> {
     }
   }
 
-  Future<void> _notifyAdmin(String preOrderId, String userId) async {
+  Future<void> _notifyAdmin(String userName, String userId, List<CartItem> items) async {
     final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
-    // Assuming admin notifications are stored in a separate collection
     CollectionReference adminNotifications = firestore.collection('admin_notifications');
+
+    // Build the detailed message for the notification
+    StringBuffer itemDetailsBuffer = StringBuffer();
+    double totalOrderPrice = 0.0;
+
+    for (CartItem item in items) {
+      double totalItemPrice = item.price.toDouble() * item.quantity.toDouble();
+      totalOrderPrice += totalItemPrice;
+      itemDetailsBuffer.writeln(
+          "${item.label} (x${item.quantity}): ₱${item.price.toStringAsFixed(2)} each, Total: ₱${totalItemPrice.toStringAsFixed(2)}");
+    }
+
+    String detailedMessage = """
+A new pre-order has been placed by $userName. 
+Items Ordered:
+${itemDetailsBuffer.toString()}
+Total Order Price: ₱${totalOrderPrice.toStringAsFixed(2)}
+""";
 
     try {
       await adminNotifications.add({
-        'preOrderId': preOrderId,
+        'userName': userName,
         'userId': userId,
-        'message': 'A new pre-order has been placed with Receipt ID $preOrderId.',
+        'message': detailedMessage,
         'timestamp': FieldValue.serverTimestamp(),
         'status': 'unread',
       });
