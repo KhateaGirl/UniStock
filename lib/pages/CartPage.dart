@@ -66,7 +66,6 @@ class _CartPageState extends State<CartPage> {
       String uniqueKey = "${item.label}_${item.selectedSize}";
 
       if (groupedItems.containsKey(uniqueKey)) {
-        // Create a new CartItem with the updated price and quantity
         final existingItem = groupedItems[uniqueKey]!;
         groupedItems[uniqueKey] = CartItem(
           id: existingItem.id,
@@ -74,8 +73,8 @@ class _CartPageState extends State<CartPage> {
           imagePath: existingItem.imagePath,
           availableSizes: existingItem.availableSizes,
           selectedSize: existingItem.selectedSize,
-          price: existingItem.price + item.price, // Add the price from the new document
-          quantity: existingItem.quantity + item.quantity, // Add the quantity
+          price: existingItem.price + item.price,
+          quantity: existingItem.quantity + item.quantity,
           selected: existingItem.selected,
           category: existingItem.category,
           courseLabel: existingItem.courseLabel,
@@ -88,12 +87,12 @@ class _CartPageState extends State<CartPage> {
           imagePath: item.imagePath,
           availableSizes: item.availableSizes,
           selectedSize: item.selectedSize,
-          price: item.price, // Initial total price is set as the price of the item
+          price: item.price,
           quantity: item.quantity,
           selected: item.selected,
           category: item.category,
           courseLabel: item.courseLabel,
-          documentReferences: [doc.reference], // Store DocumentReference objects
+          documentReferences: [doc.reference],
         );
       }
     }
@@ -120,22 +119,19 @@ class _CartPageState extends State<CartPage> {
           .where('label', isEqualTo: label)
           .get();
 
-      // If no items are found, return early.
       if (cartDocs.docs.isEmpty) {
         return;
       }
 
-      // Get the first item to use for updating the price and quantity.
       final firstDoc = cartDocs.docs.first;
-      final int unitPrice = firstDoc['price'] ~/ firstDoc['quantity']; // Calculate the unit price from total price and quantity.
+      final int unitPrice = firstDoc['price'] ~/ firstDoc['quantity'];
 
       int totalQuantity = cartDocs.docs.fold(0, (sum, doc) => sum + (doc['quantity'] as int));
       totalQuantity += change;
 
       if (totalQuantity > 0) {
-        final int newTotalPrice = unitPrice * totalQuantity; // Calculate the new total price.
+        final int newTotalPrice = unitPrice * totalQuantity;
 
-        // Update the first document with the new quantity and price.
         await firestore
             .collection('users')
             .doc(user.uid)
@@ -146,7 +142,6 @@ class _CartPageState extends State<CartPage> {
           'price': newTotalPrice,
         });
 
-        // Delete any additional documents (since we want a single record for aggregated items).
         for (var i = 1; i < cartDocs.docs.length; i++) {
           await firestore
               .collection('users')
@@ -156,7 +151,6 @@ class _CartPageState extends State<CartPage> {
               .delete();
         }
 
-        // Update the local state with the new values.
         setState(() {
           cartItems = cartItems.map((item) {
             if (item.label == label) {
@@ -166,8 +160,8 @@ class _CartPageState extends State<CartPage> {
                 imagePath: item.imagePath,
                 availableSizes: item.availableSizes,
                 selectedSize: item.selectedSize,
-                price: newTotalPrice, // Update the price.
-                quantity: totalQuantity, // Update the quantity.
+                price: newTotalPrice,
+                quantity: totalQuantity,
                 selected: item.selected,
                 category: item.category,
                 courseLabel: item.courseLabel,
@@ -178,7 +172,6 @@ class _CartPageState extends State<CartPage> {
           }).toList();
         });
       } else {
-        // If quantity drops to 0 or below, remove all documents.
         for (var doc in cartDocs.docs) {
           await firestore
               .collection('users')
@@ -214,8 +207,6 @@ class _CartPageState extends State<CartPage> {
         } else {
           selectedItems.remove(item.id.hashCode);
         }
-
-        // Update all aggregated documents for this item
         updateCartItemSelection(item.documentReferences, value);
       });
     }
@@ -292,21 +283,18 @@ class _CartPageState extends State<CartPage> {
 
       List<Map<String, dynamic>> orderItems = [];
 
-      // Collect all selected items from the cart
       for (CartItem item in cartItems) {
         if (item.selected) {
-          // Add each selected item to the orderItems list
           orderItems.add({
             'label': item.label,
             'itemSize': item.selectedSize ?? '',
             'imagePath': item.imagePath,
-            'price': item.price, // Use the stored total price
+            'price': item.price,
             'quantity': item.quantity,
             'category': item.category,
             'courseLabel': item.courseLabel,
           });
 
-          // Prepare to delete the item from the cart after checkout
           for (DocumentReference cartDocRef in item.documentReferences) {
             batch.delete(cartDocRef);
           }
@@ -314,7 +302,6 @@ class _CartPageState extends State<CartPage> {
       }
 
       if (orderItems.isNotEmpty) {
-        // Create a new order document (receipt) in Firestore
         final orderDocRef = ordersCollection.doc();
         batch.set(orderDocRef, {
           'items': orderItems,
@@ -322,19 +309,20 @@ class _CartPageState extends State<CartPage> {
           'status': 'pending',
         });
 
-        // Commit the batch write
         try {
           await batch.commit();
           print("Checked out items successfully and removed from cart.");
 
-          // Call showNotification with a notification for the whole order
           await notificationService.showNotification(
             user.uid,
             orderDocRef.id.hashCode,
             'Order Placed',
             'Your order with Receipt ID ${orderDocRef.id} has been successfully processed.',
-            orderDocRef.id, // Pass the document ID as the fifth argument
+            orderDocRef.id,
           );
+
+          await _notifyAdmin(orderDocRef.id, user.uid);
+
         } catch (e) {
           print("Failed to complete batch operation: $e");
         }
@@ -343,6 +331,25 @@ class _CartPageState extends State<CartPage> {
       }
     } else {
       print("User not logged in");
+    }
+  }
+
+  Future<void> _notifyAdmin(String orderId, String userId) async {
+    final FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    CollectionReference adminNotifications = firestore.collection('admin_notifications');
+
+    try {
+      await adminNotifications.add({
+        'orderId': orderId,
+        'userId': userId,
+        'message': 'A new order has been placed with Receipt ID $orderId.',
+        'timestamp': FieldValue.serverTimestamp(),
+        'status': 'unread',
+      });
+      print("Admin has been notified of the new order.");
+    } catch (e) {
+      print("Failed to notify admin: $e");
     }
   }
 

@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CartItem {
-  final String id;  // Document ID
+  final String id;
   final String label;
   final String imagePath;
   final List<String> availableSizes;
@@ -9,14 +9,12 @@ class CartItem {
   int price;
   int quantity;
   bool selected;
-  final String category; // Add category field
-  final String courseLabel; // Add course label field
-
-  // New field to hold multiple document references for the same item
+  final String category;
+  final String courseLabel;
   List<DocumentReference> documentReferences;
 
   CartItem({
-    required this.id,  // Include id in the constructor
+    required this.id,
     required this.label,
     required this.imagePath,
     required this.availableSizes,
@@ -24,30 +22,28 @@ class CartItem {
     required this.price,
     this.quantity = 1,
     this.selected = false,
-    required this.category,  // Include category
-    required this.courseLabel, // Include courseLabel
-    this.documentReferences = const [], // Initialize with an empty list
+    required this.category,
+    required this.courseLabel,
+    this.documentReferences = const [],
   });
 
-  // Factory method to create a CartItem from Firestore data
   factory CartItem.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return CartItem(
-      id: doc.id,  // Assign the document ID here
+      id: doc.id,
       label: data['label'] ?? 'Unknown',
       imagePath: data['imagePath'] ?? 'assets/images/placeholder.png',
       availableSizes: List<String>.from(data['availableSizes'] ?? []),
-      selectedSize: data['itemSize'] as String?,  // Use this to differentiate
+      selectedSize: data['itemSize'] as String?,
       price: data['price'] ?? 0,
       quantity: data['quantity'] ?? 1,
       selected: data['selected'] ?? false,
-      category: data['category'] ?? 'Unknown', // Assign category value
-      courseLabel: data['courseLabel'] ?? 'Unknown', // Assign course label value
-      documentReferences: [doc.reference], // Initialize with the current document reference
+      category: data['category'] ?? 'Unknown',
+      courseLabel: data['courseLabel'] ?? 'Unknown',
+      documentReferences: [doc.reference],
     );
   }
 
-  // Method to convert to a Map for saving back to Firestore if needed
   Map<String, dynamic> toMap() {
     return {
       'label': label,
@@ -57,12 +53,11 @@ class CartItem {
       'price': price,
       'quantity': quantity,
       'selected': selected,
-      'category': category, // Add category to map
-      'courseLabel': courseLabel, // Add course label to map
+      'category': category,
+      'courseLabel': courseLabel,
     };
   }
 
-  // Method to add document references
   void addDocumentReference(DocumentReference ref) {
     documentReferences.add(ref);
   }

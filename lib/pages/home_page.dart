@@ -1,3 +1,4 @@
+import 'package:UNISTOCK/pages/PreOrderPage.dart';
 import 'package:UNISTOCK/screensize.dart';
 import 'package:flutter/material.dart';
 import 'package:dots_indicator/dots_indicator.dart';
@@ -21,7 +22,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _currentIndex = 0;  // Keep track of the current index for PageView
+  int _currentIndex = 0;
   List<String> _imageUrls = [];
   bool _isLoading = true;
 
@@ -102,6 +103,15 @@ class _HomePageState extends State<HomePage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => CartPage()),
+              );
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.shopping_bag, color: Colors.white, size: isMobile ? 20.0 : 24.0),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => PreOrderPage()),
               );
             },
           ),

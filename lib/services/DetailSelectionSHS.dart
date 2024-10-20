@@ -7,7 +7,7 @@ class DetailSelectionSHS extends StatefulWidget {
   final String label;
   final String? itemSize;
   final String imagePath;
-  final int price; // General price
+  final int price;
   final int quantity;
   final ProfileInfo currentProfileInfo;
 
@@ -27,9 +27,9 @@ class DetailSelectionSHS extends StatefulWidget {
 class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
   int _currentQuantity = 1;
   String _selectedSize = '';
-  List<String> availableSizes = []; // List to store available sizes
-  Map<String, int> sizeQuantities = {}; // Track available quantities by size
-  Map<String, int?> sizePrices = {}; // Track prices by size, nullable
+  List<String> availableSizes = [];
+  Map<String, int> sizeQuantities = {};
+  Map<String, int?> sizePrices = {};
 
   @override
   void initState() {
@@ -39,7 +39,6 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
 
   Future<void> _fetchSizesFromFirestore() async {
     try {
-      // Fetch the item document from Firestore
       print('Attempting to fetch document for label: ${widget.label}');
 
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
@@ -50,30 +49,26 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
           .get();
 
       if (querySnapshot.docs.isNotEmpty) {
-        var doc = querySnapshot.docs.first; // Get the first matching document
+        var doc = querySnapshot.docs.first;
         var data = doc.data() as Map<String, dynamic>;
 
         if (data.containsKey('sizes') && data['sizes'] != null) {
           Map<String, dynamic> sizesMap = data['sizes'] as Map<String, dynamic>;
 
-          // Debug print to see what sizes are fetched
           print('Fetched sizes from Firestore: $sizesMap');
 
-          // Extract available sizes, quantities, and prices
           setState(() {
-            availableSizes = sizesMap.keys.toList(); // Extract size labels like '2XL', '5XL'
+            availableSizes = sizesMap.keys.toList();
             sizeQuantities = sizesMap.map((size, details) =>
-                MapEntry(size, details['quantity'] ?? 0)); // Extract quantities
+                MapEntry(size, details['quantity'] ?? 0));
             sizePrices = sizesMap.map((size, details) =>
-                MapEntry(size, details['price'] != null ? details['price'] as int : null)); // Extract prices if available
+                MapEntry(size, details['price'] != null ? details['price'] as int : null));
 
-            // Filter available sizes to include only those with quantity > 0
             availableSizes = availableSizes.where((size) => sizeQuantities[size]! > 0).toList();
 
             print('Available sizes after filtering: $availableSizes');
           });
         } else {
-          // Fallback if sizes aren't specified
           print('Sizes are not specified or available.');
           setState(() {
             availableSizes = [];
@@ -96,18 +91,18 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
 
   bool get disableButtons {
     if (availableSizes.isEmpty) {
-      return true; // No sizes are available, cannot proceed
+      return true;
     }
 
     if (_selectedSize.isEmpty) {
-      return true; // Size selection is required but not selected
+      return true;
     }
 
     if (sizeQuantities[_selectedSize] == null || sizeQuantities[_selectedSize]! < _currentQuantity) {
-      return true; // Not enough stock available for the selected size
+      return true;
     }
 
-    return false; // All conditions met, buttons should be enabled
+    return false;
   }
 
   void handleCheckout() {
@@ -115,11 +110,8 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
       showSizeNotSelectedDialog();
     } else {
       final int? sizePrice = sizePrices[_selectedSize];
-      final int unitPrice = sizePrice ?? widget.price; // Use size-specific price if available
+      final int unitPrice = sizePrice ?? widget.price;
       final int totalPrice = unitPrice * _currentQuantity;
-
-      // Debug information before proceeding to checkout
-      print("Debug: Checkout initiated - Item: ${widget.label}, Size: $_selectedSize, Quantity: $_currentQuantity, Total Price: $totalPrice, Category: senior_high_items");
 
       Navigator.push(
         context,
@@ -128,10 +120,10 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
             label: widget.label,
             itemSize: _selectedSize,
             imagePath: widget.imagePath,
-            unitPrice: unitPrice,  // Pass the unit price
-            price: totalPrice,  // Use the total price instead of unit price
+            unitPrice: unitPrice,
+            price: totalPrice,
             quantity: _currentQuantity,
-            category: 'senior_high_items',  // Pass the correct category here
+            category: 'senior_high_items',
             currentProfileInfo: widget.currentProfileInfo,
           ),
         ),
@@ -146,35 +138,57 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
       String userId = widget.currentProfileInfo.userId;
 
       final int? sizePrice = sizePrices[_selectedSize];
-      final int unitPrice = sizePrice ?? widget.price; // Use size-specific price if available
+      final int unitPrice = sizePrice ?? widget.price;
       final int totalPrice = unitPrice * _currentQuantity;
 
-      // Debug information before adding to cart
-      print("Debug: Adding to cart - Item: ${widget.label}, Size: $_selectedSize, Quantity: $_currentQuantity, Total Price: $totalPrice, Category: senior_high_items");
-
-      // Reference to the user's cart in Firestore
       CollectionReference cartRef = FirebaseFirestore.instance
           .collection('users')
           .doc(userId)
           .collection('cart');
 
-      // Add item to the cart with the total price
       await cartRef.add({
         'label': widget.label,
         'itemSize': _selectedSize,
         'imagePath': widget.imagePath,
-        'price': totalPrice,  // Store the total price in the price field
+        'price': totalPrice,
         'quantity': _currentQuantity,
-        'category': 'senior_high_items',  // Include category when adding to cart
+        'category': 'senior_high_items',
         'status': 'pending',
         'timestamp': FieldValue.serverTimestamp(),
       });
 
-      // Show a confirmation message to the user
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Item added to cart!')),
       );
     }
+  }
+
+  void handlePreOrder() async {
+    String userId = widget.currentProfileInfo.userId;
+
+    final int? sizePrice = sizePrices[_selectedSize];
+    final int unitPrice = sizePrice ?? widget.price;
+    final int totalPrice = unitPrice * _currentQuantity;
+
+    CollectionReference preOrderRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('preorders');
+
+    await preOrderRef.add({
+      'label': widget.label,
+      'itemSize': _selectedSize,
+      'imagePath': widget.imagePath,
+      'price': totalPrice,
+      'quantity': _currentQuantity,
+      'category': 'senior_high_items',
+      'status': 'pre-ordered',
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Item added to pre-order!')),
+    );
   }
 
   void showSizeNotSelectedDialog() {
@@ -200,7 +214,7 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
   @override
   Widget build(BuildContext context) {
     final int? sizePrice = sizePrices[_selectedSize];
-    final int displayPrice = sizePrice ?? widget.price; // Use size-specific price if available
+    final int displayPrice = sizePrice ?? widget.price;
 
     return Scaffold(
       appBar: AppBar(
@@ -228,7 +242,7 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
               ],
               SizedBox(height: 10),
               Text(
-                'Price: ₱$displayPrice', // Update price based on size selection
+                'Price: ₱$displayPrice',
                 style: TextStyle(fontSize: 20),
               ),
               _buildQuantitySelector(),
@@ -244,6 +258,17 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
                   OutlinedButton(
                     onPressed: disableButtons ? null : handleAddToCart,
                     child: Text('Add to Cart'),
+                  ),
+                  SizedBox(width: 10),
+                  ElevatedButton(
+                    onPressed: handlePreOrder, // Always enabled
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFF4CAF50),
+                    ),
+                    child: Text(
+                      'Pre-order',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ],
               ),
