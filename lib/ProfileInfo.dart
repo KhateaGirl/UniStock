@@ -1,5 +1,5 @@
 class ProfileInfo {
-  final String userId;  // Add this field
+  final String userId;
   final String name;
   final String studentId;
   final String contactNumber;
@@ -7,7 +7,7 @@ class ProfileInfo {
   final String address;
 
   ProfileInfo({
-    required this.userId,  // Initialize the userId
+    required this.userId,
     required this.name,
     required this.studentId,
     required this.contactNumber,
@@ -17,7 +17,7 @@ class ProfileInfo {
 
   Map<String, dynamic> toJson() {
     return {
-      'userId': userId,  // Include userId in the map
+      'userId': userId,
       'name': name,
       'studentId': studentId,
       'contactNumber': contactNumber,
@@ -26,10 +26,9 @@ class ProfileInfo {
     };
   }
 
-  // Factory method to create a ProfileInfo object from Firestore snapshot
   factory ProfileInfo.fromDocumentSnapshot(Map<String, dynamic> doc) {
     return ProfileInfo(
-      userId: doc['userId'] ?? '',  // Initialize userId from the document
+      userId: doc['userId'] ?? '',
       name: doc['name'] ?? '',
       studentId: doc['studentId'] ?? '',
       contactNumber: doc['contactNumber'] ?? '',

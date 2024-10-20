@@ -14,6 +14,7 @@ class _RegisterPageState extends State<RegisterPage> {
   TextEditingController name = TextEditingController();
   TextEditingController email = TextEditingController();
   TextEditingController password = TextEditingController();
+  TextEditingController studentId = TextEditingController(); // Added this line
   bool _obscureText = true;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -69,6 +70,8 @@ class _RegisterPageState extends State<RegisterPage> {
                           _buildInputField('NAME', name),
                           const SizedBox(height: 20),
                           _buildInputField('EMAIL', email),
+                          const SizedBox(height: 20),
+                          _buildInputField('STUDENT ID', studentId), // Added this line
                           const SizedBox(height: 20),
                           _buildInputField('PASSWORD', password, isPassword: true),
                           const SizedBox(height: 20),
@@ -157,72 +160,66 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Widget _buildRegisterButton(MediaQueryData mediaQuery) {
-    return Container(
-      height: mediaQuery.size.height * 0.06,
-      width: mediaQuery.size.width * 0.5, // Set a fixed width to reduce button size
-      decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 15, 5, 93),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Center(
-        child: TextButton(
-          child: const FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              'REGISTER',
-              style: TextStyle(color: Colors.white, fontSize: 18),
-            ),
+    return InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: () async {
+        if (name.text.isEmpty || email.text.isEmpty || password.text.isEmpty || studentId.text.isEmpty) { // Check for student ID
+          _showErrorDialog('Please fill in all fields.');
+        } else if (!RegExp(passwordPattern).hasMatch(password.text)) {
+          _showErrorDialog('Password must be at least 8 characters, include an uppercase letter, a lowercase letter, a number, and a special character.');
+        } else {
+          try {
+            UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+              email: email.text,
+              password: password.text,
+            );
+
+            await _firestore.collection('users').doc(userCredential.user!.uid).set({
+              'userId': userCredential.user!.uid,
+              'name': name.text,
+              'email': email.text,
+              'studentId': studentId.text, // Added this line
+              'createdAt': Timestamp.now(),
+            });
+
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: const Text('Success'),
+                  content: const Text('Registration successful!'),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => LoginScreen()),
+                        );
+                      },
+                      child: const Text('OK'),
+                    ),
+                  ],
+                );
+              },
+            );
+          } catch (e) {
+            _showErrorDialog(e.toString());
+          }
+        }
+      },
+      child: Container(
+        height: mediaQuery.size.height * 0.06,
+        width: mediaQuery.size.width * 0.5,
+        decoration: BoxDecoration(
+          color: const Color.fromARGB(255, 15, 5, 93),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Center(
+          child: Text(
+            'REGISTER',
+            style: TextStyle(color: Colors.white, fontSize: 18),
           ),
-          onPressed: () async {
-            if (name.text.isEmpty || email.text.isEmpty || password.text.isEmpty) {
-              _showErrorDialog('Please fill in all fields.');
-            } else if (!RegExp(passwordPattern).hasMatch(password.text)) {
-              // Password does not match regex pattern
-              _showErrorDialog('Password must be at least 8 characters, include an uppercase letter, a lowercase letter, a number, and a special character.');
-            } else {
-              try {
-                // Firebase Registration Logic
-                UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-                  email: email.text,
-                  password: password.text,
-                );
-
-                // Save additional user information in Firestore
-                await _firestore.collection('users').doc(userCredential.user!.uid).set({
-                  'userId': userCredential.user!.uid,  // Save userId in Firestore
-                  'name': name.text,
-                  'email': email.text,
-                  'createdAt': Timestamp.now(),
-                });
-
-                // Registration success
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: const Text('Success'),
-                      content: const Text('Registration successful!'),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(builder: (context) => LoginScreen()),
-                            );
-                          },
-                          child: const Text('OK'),
-                        ),
-                      ],
-                    );
-                  },
-                );
-              } catch (e) {
-                // Handle errors
-                _showErrorDialog(e.toString());
-              }
-            }
-          },
         ),
       ),
     );
