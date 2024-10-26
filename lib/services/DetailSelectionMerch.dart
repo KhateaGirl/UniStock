@@ -207,76 +207,138 @@ class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
     }
   }
 
+  Widget _buildButtonsRow() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          Expanded(
+            child: ElevatedButton(
+              onPressed: disableButtons ? null : handleCheckout,
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.symmetric(vertical: 15),
+                backgroundColor: disableButtons ? Colors.grey : Color(0xFFFFEB3B),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              child: Text(
+                'Checkout',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: const Color.fromARGB(255, 31, 31, 31),
+                ),
+              ),
+            ),
+          ),
+          SizedBox(width: 10),
+          Expanded(
+            child: OutlinedButton(
+              onPressed: disableButtons ? null : handleAddToCart,
+              style: OutlinedButton.styleFrom(
+                padding: EdgeInsets.symmetric(vertical: 15),
+                side: BorderSide(color: Colors.blue, width: 2),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              child: Text(
+                'Add to Cart',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(width: 10),
+          Expanded(
+            child: ElevatedButton(
+              onPressed: handlePreOrder,
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.symmetric(vertical: 15),
+                backgroundColor: Color(0xFF4CAF50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              child: Text(
+                'Pre-order',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.label),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Image.network(
-                widget.imagePath,
-                height: 300,
-                fit: BoxFit.cover,
-              ),
-              SizedBox(height: 16),
-              Text(
-                widget.label,
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              if (showSizeOptions) ...[
-                SizedBox(height: 10),
-                _buildSizeSelector(),
-              ],
-              SizedBox(height: 10),
-              Text(
-                'Price: ₱$_displayPrice',
-                style: TextStyle(fontSize: 20),
-              ),
-              _buildQuantitySelector(),
-              SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  ElevatedButton(
-                    onPressed: disableButtons ? null : handleCheckout,
-                    child: Text('Checkout'),
-                  ),
-                  SizedBox(width: 10),
-                  OutlinedButton(
-                    onPressed: disableButtons ? null : handleAddToCart,
-                    child: Text('Add to Cart'),
-                  ),
-                  SizedBox(width: 10),
-                  ElevatedButton(
-                    onPressed: handlePreOrder,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFF4CAF50),
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Image.network(
+                      widget.imagePath,
+                      height: 300,
+                      fit: BoxFit.cover,
                     ),
-                    child: Text(
-                      'Pre-order',
-                      style: TextStyle(color: Colors.white),
+                    SizedBox(height: 16),
+                    Text(
+                      widget.label,
+                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                     ),
-                  ),
-                ],
-              ),
-              if (disableButtons)
-                Padding(
-                  padding: const EdgeInsets.only(top: 16.0),
-                  child: Text(
-                    'This item is either out of stock or requires a size selection.',
-                    style: TextStyle(color: Colors.red, fontSize: 14),
-                    textAlign: TextAlign.center,
-                  ),
+                    if (showSizeOptions) ...[
+                      SizedBox(height: 10),
+                      _buildSizeSelector(),
+                    ],
+                    SizedBox(height: 10),
+                    Text(
+                      'Price: ₱$_displayPrice',
+                      style: TextStyle(fontSize: 20),
+                    ),
+                    _buildQuantitySelector(),
+                  ],
                 ),
-            ],
+              ),
+            ),
           ),
-        ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildButtonsRow(),
+                if (disableButtons)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16.0),
+                    child: Text(
+                      'This item is either out of stock or requires a size selection.',
+                      style: TextStyle(color: Colors.red, fontSize: 14),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

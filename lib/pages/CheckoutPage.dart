@@ -50,9 +50,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 height: 300,
                 child: SingleChildScrollView(
                   child: Text(
-                    // Your Terms and Conditions text here...
-                    '1. Acceptance of Terms...'
-                        '9. Contact...',
+                    '1. Acceptance of Terms: By accessing or using this service, you agree to be bound by these terms and conditions. If you do not agree with any part of these terms, you may not use the service.\n\n'
+                        '2. Use of Service: The service provided is for personal and non-commercial use only.\n\n'
+                        '3. User Responsibilities: You are responsible for maintaining the confidentiality of any account information and passwords used for this service. You agree to accept responsibility for all activities that occur under your account or password.\n\n'
+                        '4. Privacy: Your use of the service is subject to our Privacy Policy, which governs the collection, use, and disclosure of your information. By using the service, you consent to the practices described in the Privacy Policy.\n\n'
+                        '5. Limitation of Liability: In no event shall we be liable for any direct, indirect, incidental, special, consequential, or punitive damages arising out of or related to your use of the service, whether based on warranty, contract, tort (including negligence), or any other legal theory.\n\n'
+                        '6. Indemnification: You agree to indemnify and hold harmless the service provider, its affiliates, officers, directors, employees, and agents from and against any claims, liabilities, damages, losses, and expenses, including without limitation reasonable legal and accounting fees, arising out of or in any way connected with your access to or use of the service or your violation of these terms.\n\n'
+                        '7. Modification of Terms: We reserve the right to modify or revise these terms and conditions at any time without prior notice. By continuing to use the service after such modifications, you agree to be bound by the revised terms.\n\n'
+                        '8. Governing Law: These terms and conditions shall be governed by and construed in accordance with the laws of [Jurisdiction], without regard to its conflict of law provisions.\n\n'
+                        '9. Contact: If you have any questions or concerns about these terms and conditions, please contact us at [Contact Information].',
                     style: TextStyle(fontSize: 14),
                   ),
                 ),
@@ -65,9 +71,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   },
                 ),
                 TextButton(
-                  child: isOrderProcessing
-                      ? CircularProgressIndicator()
-                      : Text('Accept'),
+                  child: isOrderProcessing ? CircularProgressIndicator() : Text('Accept'),
                   onPressed: isOrderProcessing
                       ? null
                       : () async {
@@ -80,20 +84,25 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
                       print("Placing Order - Item: ${widget.label}, Price: ${widget.price}, Quantity: ${widget.quantity}, Total: $totalPrice");
 
-                      // Place the order in Firestore under 'orders'
+                      // Place the order in Firestore under 'orders' with nested 'items'
                       DocumentReference orderDocRef = await FirebaseFirestore.instance
                           .collection('users')
                           .doc(widget.currentProfileInfo.userId)
                           .collection('orders')
                           .add({
-                        'label': widget.label,
-                        'itemSize': widget.itemSize,
-                        'imagePath': widget.imagePath,
-                        'price': widget.price,
-                        'quantity': widget.quantity,
-                        'totalPrice': totalPrice,
-                        'category': widget.category,
-                        'orderDate': FieldValue.serverTimestamp(),
+                        'orderDate': FieldValue.serverTimestamp(),  // Moved orderDate outside the items array
+                        'items': [
+                          {
+                            'category': widget.category,
+                            'courseLabel': 'Unknown',
+                            'imagePath': widget.imagePath,
+                            'itemSize': widget.itemSize ?? 'N/A',
+                            'label': widget.label,
+                            'price': widget.price,
+                            'quantity': widget.quantity,
+                            'status': 'pending',
+                          }
+                        ]
                       });
 
                       print("Order placed successfully with ID: ${orderDocRef.id}");
