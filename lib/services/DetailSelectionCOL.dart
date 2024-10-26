@@ -269,10 +269,19 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
                 style: const TextStyle(fontSize: 20),
               ),
               _buildQuantitySelector(),
-              const SizedBox(height: 60),
+              const SizedBox(height: 20),
+              SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0),
+                child: Text(
+                  'This item is either out of stock or requires a size selection.',
+                  style: TextStyle(color: Colors.red, fontSize: 14),
+                  textAlign: TextAlign.center,
+                ),
+              ),
               Center(
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center, // Change from MainAxisAlignment.end to MainAxisAlignment.center
+                  mainAxisAlignment: MainAxisAlignment.center, // Centers the buttons
                   children: [
                     ElevatedButton(
                       onPressed: disableButtons ? null : handleCheckout,
@@ -286,7 +295,7 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
                     OutlinedButton(
                       onPressed: disableButtons ? null : handleAddToCart,
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8), // Smaller padding
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2), // Smaller padding
                         textStyle: const TextStyle(fontSize: 12), // Smaller font size
                       ),
                       child: const Text('Add to Cart'),
@@ -296,7 +305,7 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
                       onPressed: handlePreOrder, // Always enabled
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF4CAF50),
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8), // Smaller padding
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2), // Smaller padding
                         textStyle: const TextStyle(fontSize: 12, color: Colors.white), // Smaller font size
                       ),
                       child: const Text('Pre-order'),
@@ -304,16 +313,6 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
                   ],
                 ),
               ),
-
-              if (disableButtons)
-                const Padding(
-                  padding: EdgeInsets.only(top: 16.0),
-                  child: Text(
-                    'This item is either out of stock or requires a size selection.',
-                    style: TextStyle(color: Colors.red, fontSize: 14),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
             ],
           ),
         ),
