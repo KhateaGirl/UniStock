@@ -33,7 +33,7 @@ class CheckoutPage extends StatefulWidget {
 }
 
 class _CheckoutPageState extends State<CheckoutPage> {
-  bool isOrderProcessing = false; // To track if order is being processed
+  bool isOrderProcessing = false;
 
   final NotificationService notificationService = NotificationService();
 
@@ -72,47 +72,74 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 ),
                 TextButton(
                   child: isOrderProcessing
-                      ? CircularProgressIndicator() // Show loading if processing
+                      ? CircularProgressIndicator()
                       : Text('Accept'),
                   onPressed: isOrderProcessing
-                      ? null // Disable button when processing
+                      ? null
                       : () async {
                     setState(() {
-                      isOrderProcessing = true; // Set flag to true
+                      isOrderProcessing = true;
                     });
 
                     try {
-                      // Calculate total price
                       final int totalPrice = widget.price * widget.quantity;
 
-                      print(
-                          "Placing Order - Item: ${widget.label}, Price: ${widget.price}, Quantity: ${widget.quantity}, Total: $totalPrice");
+                      print("Placing Order - Item: ${widget.label}, Price: ${widget.price}, Quantity: ${widget.quantity}, Total: $totalPrice");
 
-                      // Add order to Firestore and get the generated document reference
+                      // Place the order in Firestore under 'orders'
                       DocumentReference orderDocRef = await FirebaseFirestore.instance
                           .collection('users')
                           .doc(widget.currentProfileInfo.userId)
-                          .collection('orders') // Subcollection for orders
+                          .collection('orders')
                           .add({
                         'label': widget.label,
                         'itemSize': widget.itemSize,
                         'imagePath': widget.imagePath,
                         'price': widget.price,
                         'quantity': widget.quantity,
-                        'totalPrice': totalPrice, // Storing the total price in Firestore
-                        'category': widget.category, // Store the correct category
+                        'totalPrice': totalPrice,
+                        'category': widget.category,
                         'orderDate': FieldValue.serverTimestamp(),
                       });
 
-                      // Now use the document ID from the generated order
-                      await notificationService.showNotification(
-                        widget.currentProfileInfo.userId,
-                        0,
-                        'Order Placed',
-                        'Your order for ${widget.label} has been successfully placed!',
-                        orderDocRef.id, // Add the document ID as the fifth argument
-                      );
+                      print("Order placed successfully with ID: ${orderDocRef.id}");
 
+                      // Add in-app notification in Firestore under 'notifications'
+                      await FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(widget.currentProfileInfo.userId)
+                          .collection('notifications')
+                          .add({
+                        'title': 'Order Placed',
+                        'message': 'Your order for ${widget.label} has been successfully placed!',
+                        'orderSummary': {
+                          'label': widget.label,
+                          'itemSize': widget.itemSize,
+                          'quantity': widget.quantity,
+                          'pricePerPiece': widget.price,
+                          'totalPrice': totalPrice,
+                        },
+                        'timestamp': FieldValue.serverTimestamp(),
+                        'status': 'unread',
+                      });
+
+                      print("In-app notification added to Firestore.");
+
+                      // Local notification for the device
+                      try {
+                        await notificationService.showNotification(
+                          widget.currentProfileInfo.userId,
+                          0,
+                          'Order Placed',
+                          'Your order for ${widget.label} has been successfully placed!',
+                          orderDocRef.id,
+                        );
+                        print("Device notification sent successfully.");
+                      } catch (notificationError) {
+                        print("Error sending device notification: $notificationError");
+                      }
+
+                      // Navigate to PurchaseSummaryPage
                       Navigator.pop(context);
                       Navigator.push(
                         context,
@@ -123,17 +150,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
                             imagePath: widget.imagePath,
                             price: widget.price,
                             quantity: widget.quantity,
-                            category: widget.category, // Pass category to summary page
+                            category: widget.category,
                             currentProfileInfo: widget.currentProfileInfo,
                           ),
                         ),
                       );
                     } catch (e) {
-                      // Handle error (e.g., show a message to the user)
                       print("Error placing order: $e");
                     } finally {
                       setState(() {
-                        isOrderProcessing = false; // Reset flag
+                        isOrderProcessing = false;
                       });
                     }
                   },
@@ -171,7 +197,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
           IconButton(
             icon: Icon(Icons.shopping_cart, color: Colors.white),
             onPressed: () {
-              // Navigate to cart page or handle cart functionality
             },
           ),
         ],
@@ -291,13 +316,11 @@ class PurchaseSummaryPage extends StatelessWidget {
 
   Future<void> _saveOrderToFirestore() async {
     try {
-      // Calculate total price
       final int totalPrice = price * quantity;
 
       print(
           "Saving Order - Item: $label, Price: $price, Quantity: $quantity, Total: $totalPrice");
 
-      // Add order to Firestore
       CollectionReference orders = FirebaseFirestore.instance
           .collection('users')
           .doc(currentProfileInfo.userId)
@@ -309,8 +332,8 @@ class PurchaseSummaryPage extends StatelessWidget {
         'imagePath': imagePath,
         'price': price,
         'quantity': quantity,
-        'totalPrice': totalPrice, // Store the total price in Firestore
-        'category': category, // Store the correct category
+        'totalPrice': totalPrice,
+        'category': category,
         'timestamp': FieldValue.serverTimestamp(),
       });
 

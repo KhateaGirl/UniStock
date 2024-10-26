@@ -162,7 +162,6 @@ class _PreOrderPageState extends State<PreOrderPage> {
             preOrderDocRef.id,
           );
 
-          // Fetch the user's name from the Firestore
           DocumentSnapshot userDoc = await firestore.collection('users').doc(user.uid).get();
           String userName = userDoc['name'] ?? 'Unknown User';
 
