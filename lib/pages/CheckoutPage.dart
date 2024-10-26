@@ -184,7 +184,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
     final FirebaseFirestore firestore = FirebaseFirestore.instance;
     CollectionReference adminNotifications = firestore.collection('admin_notifications');
 
-    // Calculate total price
     int totalPrice = pricePerPiece * quantity;
 
     String detailedMessage = """
@@ -214,6 +213,7 @@ Total Order Price: ₱${totalPrice.toStringAsFixed(2)}
       print("Failed to notify admin: $e");
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

@@ -112,6 +112,10 @@ class _CartPageState extends State<CartPage> {
     final User? user = auth.currentUser;
 
     if (user != null) {
+      // Fetch user's profile information, including their name
+      DocumentSnapshot userDoc = await firestore.collection('users').doc(user.uid).get();
+      String userName = userDoc['name'] ?? 'Unknown User';
+
       final cartCollection = firestore.collection('users').doc(user.uid).collection('cart');
       final ordersCollection = firestore.collection('users').doc(user.uid).collection('orders');
       final notificationsCollection = firestore.collection('users').doc(user.uid).collection('notifications');
@@ -167,8 +171,13 @@ class _CartPageState extends State<CartPage> {
             'status': 'unread',
           });
 
-          // Notify admin about the new order
-          await _notifyAdmin(orderDocRef.id, user.uid);
+          // Notify admin about the new order with user details
+          await _notifyAdmin(
+            orderId: orderDocRef.id,
+            userId: user.uid,
+            userName: userName,
+            items: orderItems,
+          );
 
         } catch (e) {
           print("Failed to complete batch operation: $e");
@@ -181,16 +190,43 @@ class _CartPageState extends State<CartPage> {
     }
   }
 
-  Future<void> _notifyAdmin(String orderId, String userId) async {
+  Future<void> _notifyAdmin({
+    required String orderId,
+    required String userId,
+    required String userName,
+    required List<Map<String, dynamic>> items,
+  }) async {
     final FirebaseFirestore firestore = FirebaseFirestore.instance;
-
     CollectionReference adminNotifications = firestore.collection('admin_notifications');
+
+    // Calculate total order price and prepare item details
+    StringBuffer itemDetailsBuffer = StringBuffer();
+    double totalOrderPrice = 0.0;
+
+    for (var item in items) {
+      double totalItemPrice = item['price'] * item['quantity'];
+      totalOrderPrice += totalItemPrice;
+      itemDetailsBuffer.writeln(
+          "${item['label']} (x${item['quantity']}): ₱${item['price'].toStringAsFixed(2)} each, Total: ₱${totalItemPrice.toStringAsFixed(2)}");
+    }
+
+    // Construct the detailed message
+    String detailedMessage = """
+A new order has been placed by:
+Student Name: $userName
+Student ID: $userId
+
+Items Ordered:
+${itemDetailsBuffer.toString()}
+
+Total Order Price: ₱${totalOrderPrice.toStringAsFixed(2)}
+""";
 
     try {
       await adminNotifications.add({
         'orderId': orderId,
         'userId': userId,
-        'message': 'A new order has been placed with Receipt ID $orderId.',
+        'message': detailedMessage,
         'timestamp': FieldValue.serverTimestamp(),
         'status': 'unread',
       });
