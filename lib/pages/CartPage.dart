@@ -106,6 +106,100 @@ class _CartPageState extends State<CartPage> {
     super.dispose();
   }
 
+  Future<void> handleCheckout() async {
+    final FirebaseAuth auth = FirebaseAuth.instance;
+    final FirebaseFirestore firestore = FirebaseFirestore.instance;
+    final User? user = auth.currentUser;
+
+    if (user != null) {
+      final cartCollection = firestore.collection('users').doc(user.uid).collection('cart');
+      final ordersCollection = firestore.collection('users').doc(user.uid).collection('orders');
+      final notificationsCollection = firestore.collection('users').doc(user.uid).collection('notifications');
+      final WriteBatch batch = firestore.batch();
+
+      List<Map<String, dynamic>> orderItems = [];
+
+      for (CartItem item in cartItems) {
+        if (item.selected) {
+          orderItems.add({
+            'label': item.label,
+            'itemSize': item.selectedSize ?? '',
+            'imagePath': item.imagePath,
+            'price': item.price,
+            'quantity': item.quantity,
+            'category': item.category,
+            'courseLabel': item.courseLabel,
+          });
+
+          for (DocumentReference cartDocRef in item.documentReferences) {
+            batch.delete(cartDocRef);
+          }
+        }
+      }
+
+      if (orderItems.isNotEmpty) {
+        final orderDocRef = ordersCollection.doc();
+        batch.set(orderDocRef, {
+          'items': orderItems,
+          'orderDate': FieldValue.serverTimestamp(),
+          'status': 'pending',
+        });
+
+        try {
+          await batch.commit();
+          print("Checked out items successfully and removed from cart.");
+
+          // Send local notification for successful checkout
+          await notificationService.showNotification(
+            user.uid,
+            orderDocRef.id.hashCode,
+            'Order Placed',
+            'Your order with Receipt ID ${orderDocRef.id} has been successfully processed.',
+            orderDocRef.id,
+          );
+
+          // Add in-app notification for successful checkout
+          await notificationsCollection.add({
+            'title': 'Order Placed',
+            'message': 'Your order with Receipt ID ${orderDocRef.id} has been successfully placed!',
+            'orderSummary': orderItems,
+            'timestamp': FieldValue.serverTimestamp(),
+            'status': 'unread',
+          });
+
+          // Notify admin about the new order
+          await _notifyAdmin(orderDocRef.id, user.uid);
+
+        } catch (e) {
+          print("Failed to complete batch operation: $e");
+        }
+      } else {
+        print("No items selected for checkout.");
+      }
+    } else {
+      print("User not logged in");
+    }
+  }
+
+  Future<void> _notifyAdmin(String orderId, String userId) async {
+    final FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    CollectionReference adminNotifications = firestore.collection('admin_notifications');
+
+    try {
+      await adminNotifications.add({
+        'orderId': orderId,
+        'userId': userId,
+        'message': 'A new order has been placed with Receipt ID $orderId.',
+        'timestamp': FieldValue.serverTimestamp(),
+        'status': 'unread',
+      });
+      print("Admin has been notified of the new order.");
+    } catch (e) {
+      print("Failed to notify admin: $e");
+    }
+  }
+
   Future<void> updateCartItemQuantity(String label, int change) async {
     final FirebaseAuth auth = FirebaseAuth.instance;
     final FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -269,88 +363,6 @@ class _CartPageState extends State<CartPage> {
         );
       },
     );
-  }
-
-  void handleCheckout() async {
-    final FirebaseAuth auth = FirebaseAuth.instance;
-    final FirebaseFirestore firestore = FirebaseFirestore.instance;
-    final User? user = auth.currentUser;
-
-    if (user != null) {
-      final cartCollection = firestore.collection('users').doc(user.uid).collection('cart');
-      final ordersCollection = firestore.collection('users').doc(user.uid).collection('orders');
-      final WriteBatch batch = firestore.batch();
-
-      List<Map<String, dynamic>> orderItems = [];
-
-      for (CartItem item in cartItems) {
-        if (item.selected) {
-          orderItems.add({
-            'label': item.label,
-            'itemSize': item.selectedSize ?? '',
-            'imagePath': item.imagePath,
-            'price': item.price,
-            'quantity': item.quantity,
-            'category': item.category,
-            'courseLabel': item.courseLabel,
-          });
-
-          for (DocumentReference cartDocRef in item.documentReferences) {
-            batch.delete(cartDocRef);
-          }
-        }
-      }
-
-      if (orderItems.isNotEmpty) {
-        final orderDocRef = ordersCollection.doc();
-        batch.set(orderDocRef, {
-          'items': orderItems,
-          'orderDate': FieldValue.serverTimestamp(),
-          'status': 'pending',
-        });
-
-        try {
-          await batch.commit();
-          print("Checked out items successfully and removed from cart.");
-
-          await notificationService.showNotification(
-            user.uid,
-            orderDocRef.id.hashCode,
-            'Order Placed',
-            'Your order with Receipt ID ${orderDocRef.id} has been successfully processed.',
-            orderDocRef.id,
-          );
-
-          await _notifyAdmin(orderDocRef.id, user.uid);
-
-        } catch (e) {
-          print("Failed to complete batch operation: $e");
-        }
-      } else {
-        print("No items selected for checkout.");
-      }
-    } else {
-      print("User not logged in");
-    }
-  }
-
-  Future<void> _notifyAdmin(String orderId, String userId) async {
-    final FirebaseFirestore firestore = FirebaseFirestore.instance;
-
-    CollectionReference adminNotifications = firestore.collection('admin_notifications');
-
-    try {
-      await adminNotifications.add({
-        'orderId': orderId,
-        'userId': userId,
-        'message': 'A new order has been placed with Receipt ID $orderId.',
-        'timestamp': FieldValue.serverTimestamp(),
-        'status': 'unread',
-      });
-      print("Admin has been notified of the new order.");
-    } catch (e) {
-      print("Failed to notify admin: $e");
-    }
   }
 
   @override

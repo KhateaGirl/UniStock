@@ -33,7 +33,18 @@ class OrderSummaryPage extends StatelessWidget {
             return Center(child: Text("Order Summary Not Found"));
           }
 
-          final orderSummary = List<Map<String, dynamic>>.from(data['orderSummary']);
+          // Check if orderSummary is a List or a Map
+          List<Map<String, dynamic>> orderSummaryList;
+          if (data['orderSummary'] is Map) {
+            // Convert single Map to a List with one entry
+            orderSummaryList = [Map<String, dynamic>.from(data['orderSummary'])];
+          } else if (data['orderSummary'] is List) {
+            // Cast as List<Map<String, dynamic>>
+            orderSummaryList = List<Map<String, dynamic>>.from(data['orderSummary']);
+          } else {
+            // Invalid format
+            return Center(child: Text("Invalid Order Summary Format"));
+          }
 
           return SingleChildScrollView(
             child: Column(
@@ -69,7 +80,7 @@ class OrderSummaryPage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      ...orderSummary.map((item) {
+                      ...orderSummaryList.map((item) {
                         // Displaying correct price per piece and quantity
                         final int quantity = item['quantity'] ?? 0;
                         final double pricePerPiece = (item['pricePerPiece'] ?? 0).toDouble();
@@ -137,7 +148,7 @@ class OrderSummaryPage extends StatelessWidget {
                             SizedBox(height: 10),
                             Text(
                               // Corrected Total Calculation
-                              "\₱${orderSummary.fold(0.0, (prev, item) {
+                              "\₱${orderSummaryList.fold(0.0, (prev, item) {
                                 final int quantity = item['quantity'] ?? 0;
                                 final double pricePerPiece = (item['pricePerPiece'] ?? 0).toDouble();
                                 return prev + (quantity * pricePerPiece);

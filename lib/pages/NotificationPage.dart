@@ -33,28 +33,23 @@ class _NotificationsPageState extends State<NotificationsPage> {
         .listen((snapshot) {
       for (var docChange in snapshot.docChanges) {
         if (docChange.type == DocumentChangeType.added) {
-          // Extract the data from the document change
           final data = docChange.doc.data() as Map<String, dynamic>;
 
-          // Check if the notification status is 'unread'
           if (data['status'] == 'unread') {
-            // Extract title, message, and timestamp
             final String title = data['title'] ?? 'No Title';
             final String message = data['message'] ?? 'No Message';
             final String timestamp = data['timestamp'] != null
                 ? DateFormat.yMMMd().add_jm().format((data['timestamp'] as Timestamp).toDate())
                 : 'No Timestamp';
 
-            // Construct the notification body with your desired format
             final String notificationBody = "$message\n$title as of $timestamp";
 
-            // Show the notification using NotificationService
             _notificationService.showNotification(
               widget.userId,
-              docChange.doc.id.hashCode, // Use document ID's hash as a unique ID
+              docChange.doc.id.hashCode,
               title,
               notificationBody,
-              docChange.doc.id, // Pass the document ID as the fifth argument
+              docChange.doc.id,
             );
           }
         }
@@ -82,7 +77,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
             .doc(widget.userId)
             .collection('notifications')
             .orderBy('timestamp', descending: true)
-            .snapshots(), // Get all notifications regardless of status
+            .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
@@ -97,7 +92,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
             );
           }
 
-          // Build the list of notifications
           final notifications = snapshot.data!.docs.map((doc) {
             final data = doc.data() as Map<String, dynamic>;
             return _buildNotificationCard(data, doc.id);
@@ -151,7 +145,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
         if (data['orderSummary'] != null)
           TextButton(
             onPressed: () {
-              // Update the status of the notification to 'read'
               FirebaseFirestore.instance
                   .collection('users')
                   .doc(widget.userId)
@@ -159,7 +152,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   .doc(docId)
                   .update({'status': 'read'});
 
-              // Navigate to OrderSummaryPage and pass the necessary document ID
               Navigator.pushNamed(
                 context,
                 '/orderSummary',
@@ -176,7 +168,14 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 
   void _showOrderSummaryDialog(BuildContext context, Map<String, dynamic> data) {
-    final orderSummary = List<Map<String, dynamic>>.from(data['orderSummary']);
+    final orderSummary = data['orderSummary'];
+
+    if (orderSummary is! List) {
+      print("Error: orderSummary is not a list.");
+      return;
+    }
+
+    final List<Map<String, dynamic>> orderItems = List<Map<String, dynamic>>.from(orderSummary);
     final timestamp = data['timestamp'] != null
         ? DateFormat.yMMMd().add_jm().format((data['timestamp'] as Timestamp).toDate())
         : 'No Timestamp';
@@ -195,9 +194,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
               children: [
                 _buildDialogHeader(),
                 SizedBox(height: 16),
-                _buildOrderSummaryContent(orderSummary),
+                _buildOrderSummaryContent(orderItems),
                 Divider(),
-                _buildDialogFooter(orderSummary, timestamp),
+                _buildDialogFooter(orderItems, timestamp),
                 SizedBox(height: 20),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
