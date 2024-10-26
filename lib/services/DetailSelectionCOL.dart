@@ -140,11 +140,11 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Size Not Selected'),
-          content: Text('Please select a size before proceeding.'),
+          title: const Text('Size Not Selected'),
+          content: const Text('Please select a size before proceeding.'),
           actions: <Widget>[
             TextButton(
-              child: Text('OK'),
+              child: const Text('OK'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -205,7 +205,7 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Item added to cart!')),
+        const SnackBar(content: Text('Item added to cart!')),
       );
     }
   }
@@ -233,7 +233,7 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Item added to pre-order!')),
+      const SnackBar(content: Text('Item added to pre-order!')),
     );
   }
 
@@ -254,50 +254,60 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
                 height: 300,
                 fit: BoxFit.cover,
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               Text(
                 widget.label,
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               if (availableSizes.isNotEmpty) ...[
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 _buildSizeSelector(),
               ],
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               Text(
                 'Price: ₱$_displayPrice',
-                style: TextStyle(fontSize: 20),
+                style: const TextStyle(fontSize: 20),
               ),
               _buildQuantitySelector(),
-              SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  ElevatedButton(
-                    onPressed: disableButtons ? null : handleCheckout,
-                    child: Text('Checkout'),
-                  ),
-                  SizedBox(width: 10),
-                  OutlinedButton(
-                    onPressed: disableButtons ? null : handleAddToCart,
-                    child: Text('Add to Cart'),
-                  ),
-                  SizedBox(width: 10),
-                  ElevatedButton(
-                    onPressed: handlePreOrder, // Always enabled
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFF4CAF50),
+              const SizedBox(height: 60),
+              Center(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center, // Change from MainAxisAlignment.end to MainAxisAlignment.center
+                  children: [
+                    ElevatedButton(
+                      onPressed: disableButtons ? null : handleCheckout,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8), // Smaller padding
+                        textStyle: const TextStyle(fontSize: 12), // Smaller font size
+                      ),
+                      child: const Text('Checkout'),
                     ),
-                    child: Text(
-                      'Pre-order',
-                      style: TextStyle(color: Colors.white),
+                    const SizedBox(width: 8), // Space between buttons
+                    OutlinedButton(
+                      onPressed: disableButtons ? null : handleAddToCart,
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8), // Smaller padding
+                        textStyle: const TextStyle(fontSize: 12), // Smaller font size
+                      ),
+                      child: const Text('Add to Cart'),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 8), // Space between buttons
+                    ElevatedButton(
+                      onPressed: handlePreOrder, // Always enabled
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF4CAF50),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8), // Smaller padding
+                        textStyle: const TextStyle(fontSize: 12, color: Colors.white), // Smaller font size
+                      ),
+                      child: const Text('Pre-order'),
+                    ),
+                  ],
+                ),
               ),
+
               if (disableButtons)
-                Padding(
-                  padding: const EdgeInsets.only(top: 16.0),
+                const Padding(
+                  padding: EdgeInsets.only(top: 16.0),
                   child: Text(
                     'This item is either out of stock or requires a size selection.',
                     style: TextStyle(color: Colors.red, fontSize: 14),
@@ -313,13 +323,13 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
 
   Widget _buildSizeSelector() {
     return availableSizes.isEmpty
-        ? Text(
+        ? const Text(
       'This item does not have sizes available',
       style: TextStyle(color: Colors.grey, fontSize: 16),
     )
         : DropdownButton<String>(
       value: _selectedSize.isEmpty ? null : _selectedSize,
-      hint: Text('Select Size'),
+      hint: const Text('Select Size'),
       items: availableSizes.map((size) {
         return DropdownMenuItem(
           value: size,
@@ -339,7 +349,7 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
   Widget _buildQuantitySelector() {
     return Row(
       children: [
-        Text('Quantity:'),
+        const Text('Quantity:'),
         IconButton(
           onPressed: _currentQuantity > 1
               ? () {
@@ -348,7 +358,7 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
             });
           }
               : null,
-          icon: Icon(Icons.remove),
+          icon: const Icon(Icons.remove),
         ),
         Text('$_currentQuantity'),
         IconButton(
@@ -359,7 +369,7 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
             });
           }
               : null,
-          icon: Icon(Icons.add),
+          icon: const Icon(Icons.add),
         ),
       ],
     );

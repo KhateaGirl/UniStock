@@ -247,30 +247,39 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
               ),
               _buildQuantitySelector(),
               SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  ElevatedButton(
-                    onPressed: disableButtons ? null : handleCheckout,
-                    child: Text('Checkout'),
-                  ),
-                  SizedBox(width: 10),
-                  OutlinedButton(
-                    onPressed: disableButtons ? null : handleAddToCart,
-                    child: Text('Add to Cart'),
-                  ),
-                  SizedBox(width: 10),
-                  ElevatedButton(
-                    onPressed: handlePreOrder, // Always enabled
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFF4CAF50),
+              Center(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center, // Change from MainAxisAlignment.end to MainAxisAlignment.center
+                  children: [
+                    ElevatedButton(
+                      onPressed: disableButtons ? null : handleCheckout,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8), // Smaller padding
+                        textStyle: const TextStyle(fontSize: 12), // Smaller font size
+                      ),
+                      child: const Text('Checkout'),
                     ),
-                    child: Text(
-                      'Pre-order',
-                      style: TextStyle(color: Colors.white),
+                    const SizedBox(width: 8), // Space between buttons
+                    OutlinedButton(
+                      onPressed: disableButtons ? null : handleAddToCart,
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8), // Smaller padding
+                        textStyle: const TextStyle(fontSize: 12), // Smaller font size
+                      ),
+                      child: const Text('Add to Cart'),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 8), // Space between buttons
+                    ElevatedButton(
+                      onPressed: handlePreOrder, // Always enabled
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF4CAF50),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8), // Smaller padding
+                        textStyle: const TextStyle(fontSize: 12, color: Colors.white), // Smaller font size
+                      ),
+                      child: const Text('Pre-order'),
+                    ),
+                  ],
+                ),
               ),
               if (disableButtons)
                 Padding(
