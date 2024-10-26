@@ -435,7 +435,6 @@ class _CartPageState extends State<CartPage> {
   Widget buildCartItem(CartItem item, bool isMobile) {
     final int unitPrice = item.price;
     final int totalPrice = unitPrice * item.quantity;
-
     return Card(
       margin: EdgeInsets.all(isMobile ? 4.0 : 8.0),
       child: Padding(
