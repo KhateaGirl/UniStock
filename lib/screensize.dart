@@ -21,3 +21,4 @@ extension ScreenSize on BuildContext {
   bool get isLargeDesktopDevice =>
       deviceWidth >= ScreenBreakpoint.largeDesktopMaxWidth;
 }
+

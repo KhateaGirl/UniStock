@@ -85,12 +85,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       print("Placing Order - Item: ${widget.label}, Price: ${widget.price}, Quantity: ${widget.quantity}, Total: $totalPrice");
 
                       // Place the order in Firestore under 'orders' with nested 'items'
-                      DocumentReference orderDocRef = await FirebaseFirestore.instance
+                      DocumentReference orderDocRef = await FirebaseFirestore
+                          .instance
                           .collection('users')
                           .doc(widget.currentProfileInfo.userId)
                           .collection('orders')
                           .add({
-                        'orderDate': FieldValue.serverTimestamp(),  // Moved orderDate outside the items array
+                        'orderDate': FieldValue.serverTimestamp(),
                         'items': [
                           {
                             'category': widget.category,
@@ -100,9 +101,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
                             'label': widget.label,
                             'price': widget.price,
                             'quantity': widget.quantity,
-                            'status': 'pending',
+                            // Removed 'status' here to add it at the top level
                           }
-                        ]
+                        ],
+                        'status': 'pending', // Added status here at the top level
                       });
 
                       print("Order placed successfully with ID: ${orderDocRef.id}");
@@ -119,7 +121,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           'label': widget.label,
                           'itemSize': widget.itemSize,
                           'quantity': widget.quantity,
-                          'pricePerPiece': widget.price,
+                          'pricePerPiece': widget.unitPrice,
                           'totalPrice': totalPrice,
                         },
                         'timestamp': FieldValue.serverTimestamp(),
@@ -183,15 +185,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
     );
   }
 
-  Future<void> _notifyAdmin(
-      String userName,
+  Future<void> _notifyAdmin(String userName,
       String userId,
       String label,
       String? itemSize,
       int quantity,
       int pricePerPiece) async {
     final FirebaseFirestore firestore = FirebaseFirestore.instance;
-    CollectionReference adminNotifications = firestore.collection('admin_notifications');
+    CollectionReference adminNotifications = firestore.collection(
+        'admin_notifications');
 
     int totalPrice = pricePerPiece * quantity;
 
@@ -226,6 +228,8 @@ Total Order Price: ₱${totalPrice.toStringAsFixed(2)}
 
   @override
   Widget build(BuildContext context) {
+    final int totalPrice = widget.unitPrice * widget.quantity;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Color(0xFF046be0),
@@ -245,13 +249,6 @@ Total Order Price: ₱${totalPrice.toStringAsFixed(2)}
           ),
         ),
         centerTitle: true,
-        actions: <Widget>[
-          IconButton(
-            icon: Icon(Icons.shopping_cart, color: Colors.white),
-            onPressed: () {
-            },
-          ),
-        ],
       ),
       body: Padding(
         padding: EdgeInsets.all(16.0),
@@ -277,17 +274,20 @@ Total Order Price: ₱${totalPrice.toStringAsFixed(2)}
                   child: Image.network(
                     widget.imagePath,
                     fit: BoxFit.cover,
-                    errorBuilder: (BuildContext context, Object error, StackTrace? stackTrace) {
+                    errorBuilder: (BuildContext context, Object error,
+                        StackTrace? stackTrace) {
                       return Center(
                         child: Icon(Icons.error, size: 50, color: Colors.red),
                       );
                     },
-                    loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
+                    loadingBuilder: (BuildContext context, Widget child,
+                        ImageChunkEvent? loadingProgress) {
                       if (loadingProgress == null) return child;
                       return Center(
                         child: CircularProgressIndicator(
                           value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded / (loadingProgress.expectedTotalBytes ?? 1)
+                              ? loadingProgress.cumulativeBytesLoaded /
+                              (loadingProgress.expectedTotalBytes ?? 1)
                               : null,
                         ),
                       );
@@ -316,7 +316,7 @@ Total Order Price: ₱${totalPrice.toStringAsFixed(2)}
                       ),
                       SizedBox(height: 5),
                       Text(
-                        'Price: ₱${widget.price}',
+                        'Price: ₱${widget.unitPrice}',
                         style: TextStyle(
                           fontSize: 16,
                         ),
@@ -326,6 +326,14 @@ Total Order Price: ₱${totalPrice.toStringAsFixed(2)}
                         'Quantity: ${widget.quantity}',
                         style: TextStyle(
                           fontSize: 16,
+                        ),
+                      ),
+                      SizedBox(height: 5),
+                      Text(
+                        'Total: ₱$totalPrice',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
@@ -347,7 +355,7 @@ Total Order Price: ₱${totalPrice.toStringAsFixed(2)}
   }
 }
 
-class PurchaseSummaryPage extends StatelessWidget {
+  class PurchaseSummaryPage extends StatelessWidget {
   final String label;
   final String? itemSize;
   final String imagePath;

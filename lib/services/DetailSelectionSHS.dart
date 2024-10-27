@@ -246,7 +246,7 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
                 style: TextStyle(fontSize: 20),
               ),
               _buildQuantitySelector(),
-              SizedBox(height: 20),
+              SizedBox(height: 60),
               Padding(
                 padding: const EdgeInsets.only(top: 16.0),
                 child: Text(

@@ -213,6 +213,7 @@ class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
+          SizedBox(width: 40),
           Expanded(
             child: ElevatedButton(
               onPressed: disableButtons ? null : handleCheckout,

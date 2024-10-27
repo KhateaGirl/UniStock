@@ -269,8 +269,8 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
                 style: const TextStyle(fontSize: 20),
               ),
               _buildQuantitySelector(),
-              const SizedBox(height: 20),
-              SizedBox(height: 20),
+              const SizedBox(height: 30),
+              SizedBox(height: 45),
               Padding(
                 padding: const EdgeInsets.only(top: 16.0),
                 child: Text(

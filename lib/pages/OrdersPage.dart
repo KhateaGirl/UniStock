@@ -159,20 +159,20 @@ class _OrdersPageState extends State<OrdersPage> {
                                   Text('Quantity: ${item['quantity'] ?? 0}'),
                                   Text('Total: ₱${(item['price'] ?? 0) * (item['quantity'] ?? 0)}'),
                                   SizedBox(height: 5),
-                                  Text(
-                                    'Category: ${item['category'] ?? 'Unknown'}',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                  Text(
-                                    'Course Label: ${item['courseLabel'] ?? 'Unknown'}',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
+                                  // Text(
+                                  //   'Category: ${item['category'] ?? 'Unknown'}',
+                                  //   style: TextStyle(
+                                  //     fontSize: 12,
+                                  //     color: Colors.grey[600],
+                                  //   ),
+                                  // ),
+                                  // Text(
+                                  //   'Course Label: ${item['courseLabel'] ?? 'Unknown'}',
+                                  //   style: TextStyle(
+                                  //     fontSize: 12,
+                                  //     color: Colors.grey[600],
+                                  //   ),
+                                  // ),
                                 ],
                               ),
                             );
