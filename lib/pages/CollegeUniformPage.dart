@@ -67,7 +67,7 @@ class CollegeUniformsPage extends StatelessWidget {
                 context,
                 'assets/images/bsa and bsba.png',
                 'BSA & BSBA',
-                'BM/AB COMM',
+                'BM & AB COMM',
               ),
               buildImageOption(
                 context,

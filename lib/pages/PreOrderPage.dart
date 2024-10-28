@@ -128,7 +128,6 @@ class _PreOrderPageState extends State<PreOrderPage> {
             'label': item.label,
             'itemSize': item.selectedSize ?? '',
             'imagePath': item.imagePath,
-            'price': item.price,
             'quantity': item.quantity,
             'category': item.category,
             'courseLabel': item.courseLabel,

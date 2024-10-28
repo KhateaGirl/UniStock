@@ -15,6 +15,7 @@ class CheckoutPage extends StatefulWidget {
   final int price;
   final int quantity;
   final String category;
+  final String? courseLabel;
   final ProfileInfo currentProfileInfo;
 
   CheckoutPage({
@@ -25,6 +26,7 @@ class CheckoutPage extends StatefulWidget {
     required this.price,
     required this.quantity,
     required this.category,
+    this.courseLabel,
     required this.currentProfileInfo,
   });
 
@@ -83,8 +85,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       final int totalPrice = widget.price * widget.quantity;
 
                       print("Placing Order - Item: ${widget.label}, Price: ${widget.price}, Quantity: ${widget.quantity}, Total: $totalPrice");
-
-                      // Place the order in Firestore under 'orders' with nested 'items'
                       DocumentReference orderDocRef = await FirebaseFirestore
                           .instance
                           .collection('users')
@@ -95,13 +95,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
                         'items': [
                           {
                             'category': widget.category,
-                            'courseLabel': 'Unknown',
+                            'courseLabel': widget.courseLabel ?? 'N/A',
                             'imagePath': widget.imagePath,
                             'itemSize': widget.itemSize ?? 'N/A',
                             'label': widget.label,
                             'price': widget.price,
                             'quantity': widget.quantity,
-                            // Removed 'status' here to add it at the top level
                           }
                         ],
                         'status': 'pending', // Added status here at the top level
@@ -489,7 +488,6 @@ Total Order Price: ₱${totalPrice.toStringAsFixed(2)}
             ElevatedButton(
               onPressed: () async {
                 await _saveOrderToFirestore();
-
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(

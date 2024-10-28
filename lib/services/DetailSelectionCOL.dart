@@ -172,12 +172,14 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
             price: totalPrice,
             quantity: _currentQuantity,
             category: 'college_items',
+            courseLabel: widget.courseLabel,
             currentProfileInfo: widget.currentProfileInfo,
           ),
         ),
       );
     }
   }
+
 
   void handleAddToCart() async {
     if (availableSizes.isNotEmpty && _selectedSize.isEmpty) {
