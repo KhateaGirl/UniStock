@@ -147,7 +147,6 @@ class OrderSummaryPage extends StatelessWidget {
                             ),
                             SizedBox(height: 10),
                             Text(
-                              // Corrected Total Calculation
                               "\₱${orderSummaryList.fold(0.0, (prev, item) {
                                 final int quantity = item['quantity'] ?? 0;
                                 final double pricePerPiece = (item['pricePerPiece'] ?? 0).toDouble();

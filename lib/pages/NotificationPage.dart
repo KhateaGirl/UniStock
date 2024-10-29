@@ -57,6 +57,24 @@ class _NotificationsPageState extends State<NotificationsPage> {
     });
   }
 
+  // Function to mark all notifications as read
+  Future<void> markAllAsRead() async {
+    WriteBatch batch = FirebaseFirestore.instance.batch();
+    final QuerySnapshot unreadNotifications = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.userId)
+        .collection('notifications')
+        .where('status', isEqualTo: 'unread')
+        .get();
+
+    for (var doc in unreadNotifications.docs) {
+      batch.update(doc.reference, {'status': 'read'});
+    }
+
+    await batch.commit();
+    print("All notifications marked as read");
+  }
+
   @override
   void dispose() {
     _notificationSubscription.cancel();
@@ -70,6 +88,16 @@ class _NotificationsPageState extends State<NotificationsPage> {
         backgroundColor: Color(0xFFFFFFFF),
         title: Text('Notifications', style: TextStyle(color: Colors.black)),
         centerTitle: true,
+        actions: [
+          // "Mark all as read" button
+          TextButton(
+            onPressed: markAllAsRead,
+            child: Text(
+              "Mark all as read",
+              style: TextStyle(color: Colors.blue),
+            ),
+          ),
+        ],
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance

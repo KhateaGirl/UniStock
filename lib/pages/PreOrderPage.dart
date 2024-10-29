@@ -1,6 +1,5 @@
 import 'package:UNISTOCK/models/CartItem.dart';
 import 'package:UNISTOCK/screensize.dart';
-import 'package:UNISTOCK/services/notification_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -17,12 +16,10 @@ class _PreOrderPageState extends State<PreOrderPage> {
   Set<int> selectedItems = {};
   bool selectAll = false;
   List<CartItem> preOrderItems = [];
-  late NotificationService notificationService;
 
   @override
   void initState() {
     super.initState();
-    notificationService = NotificationService();
     final FirebaseAuth auth = FirebaseAuth.instance;
     final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
@@ -120,7 +117,6 @@ class _PreOrderPageState extends State<PreOrderPage> {
       final WriteBatch batch = firestore.batch();
 
       List<Map<String, dynamic>> preOrderDetails = [];
-      List<CartItem> selectedItemsForAdminNotification = [];
 
       for (CartItem item in preOrderItems) {
         if (item.selected) {
@@ -132,8 +128,6 @@ class _PreOrderPageState extends State<PreOrderPage> {
             'category': item.category,
             'courseLabel': item.courseLabel,
           });
-
-          selectedItemsForAdminNotification.add(item);
 
           for (DocumentReference preOrderDocRef in item.documentReferences) {
             batch.delete(preOrderDocRef);
@@ -152,36 +146,6 @@ class _PreOrderPageState extends State<PreOrderPage> {
         try {
           await batch.commit();
           print("Pre-ordered items successfully.");
-
-          // Send local device notification
-          await notificationService.showNotification(
-            user.uid,
-            preOrderDocRef.id.hashCode,
-            'Pre-order Confirmed',
-            'Your pre-order has been confirmed.',
-            preOrderDocRef.id,
-          );
-
-          // Add in-app notification in Firestore
-          await firestore
-              .collection('users')
-              .doc(user.uid)
-              .collection('notifications')
-              .add({
-            'title': 'Pre-order Confirmed',
-            'message': 'Your pre-order has been successfully confirmed.',
-            'orderSummary': preOrderDetails,
-            'timestamp': FieldValue.serverTimestamp(),
-            'status': 'unread',
-          });
-
-          print("In-app notification added to Firestore for pre-order confirmation.");
-
-          DocumentSnapshot userDoc = await firestore.collection('users').doc(user.uid).get();
-          String userName = userDoc['name'] ?? 'Unknown User';
-
-          await _notifyAdmin(userName, user.uid, selectedItemsForAdminNotification);
-
         } catch (e) {
           print("Failed to complete pre-order operation: $e");
         }
@@ -190,54 +154,6 @@ class _PreOrderPageState extends State<PreOrderPage> {
       }
     } else {
       print("User not logged in");
-    }
-  }
-
-  Future<void> _notifyAdmin(String userName, String userId, List<CartItem> items) async {
-    final FirebaseFirestore firestore = FirebaseFirestore.instance;
-    CollectionReference adminNotifications = firestore.collection('admin_notifications');
-
-    // Build the detailed message for the notification
-    StringBuffer itemDetailsBuffer = StringBuffer();
-    double totalOrderPrice = 0.0;
-
-    // Calculate each item's total price and build the message details
-    for (CartItem item in items) {
-      double totalItemPrice = item.price.toDouble() * item.quantity.toDouble();
-      totalOrderPrice += totalItemPrice;
-      itemDetailsBuffer.writeln(
-          "${item.label} (x${item.quantity}): ₱${item.price.toStringAsFixed(2)} each, Total: ₱${totalItemPrice.toStringAsFixed(2)}");
-    }
-
-    // Create a concise message for the admin notification with student details
-    String detailedMessage = """
-A new pre-order has been placed by:
-Student Name: $userName
-Student ID: $userId
-
-Items Ordered:
-${itemDetailsBuffer.toString()}
-Total Order Price: ₱${totalOrderPrice.toStringAsFixed(2)}
-""";
-
-    try {
-      await adminNotifications.add({
-        'title': 'New Pre-order Received',
-        'userName': userName,
-        'userId': userId,
-        'message': detailedMessage,
-        'timestamp': FieldValue.serverTimestamp(),
-        'status': 'unread',
-        'orderSummary': items.map((item) => {
-          'label': item.label,
-          'quantity': item.quantity,
-          'pricePerPiece': item.price,
-          'totalPrice': item.price * item.quantity,
-        }).toList(), // Optional: add order summary as an array of maps
-      });
-      print("Admin has been notified of the new pre-order.");
-    } catch (e) {
-      print("Failed to notify admin: $e");
     }
   }
 

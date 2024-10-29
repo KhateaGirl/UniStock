@@ -132,6 +132,10 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
       return true;
     }
 
+    if (_availableQuantity == 0) {
+      return true;
+    }
+
     return false;
   }
 
@@ -272,43 +276,46 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
               ),
               _buildQuantitySelector(),
               const SizedBox(height: 30),
-              SizedBox(height: 45),
-              Padding(
-                padding: const EdgeInsets.only(top: 16.0),
-                child: Text(
-                  'This item is either out of stock or requires a size selection.',
-                  style: TextStyle(color: Colors.red, fontSize: 14),
-                  textAlign: TextAlign.center,
+
+              // Show out-of-stock message only when no stock is available for the selected size
+              if (_availableQuantity == 0 || _selectedSize.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16.0),
+                  child: Text(
+                    'This item is either out of stock or requires a size selection.',
+                    style: TextStyle(color: Colors.red, fontSize: 14),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
-              ),
+
               Center(
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center, // Centers the buttons
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     ElevatedButton(
                       onPressed: disableButtons ? null : handleCheckout,
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8), // Smaller padding
-                        textStyle: const TextStyle(fontSize: 12), // Smaller font size
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        textStyle: const TextStyle(fontSize: 12),
                       ),
                       child: const Text('Checkout'),
                     ),
-                    const SizedBox(width: 8), // Space between buttons
+                    const SizedBox(width: 8),
                     OutlinedButton(
                       onPressed: disableButtons ? null : handleAddToCart,
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2), // Smaller padding
-                        textStyle: const TextStyle(fontSize: 12), // Smaller font size
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                        textStyle: const TextStyle(fontSize: 12),
                       ),
                       child: const Text('Add to Cart'),
                     ),
-                    const SizedBox(width: 8), // Space between buttons
+                    const SizedBox(width: 8),
                     ElevatedButton(
-                      onPressed: handlePreOrder, // Always enabled
+                      onPressed: handlePreOrder,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF4CAF50),
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2), // Smaller padding
-                        textStyle: const TextStyle(fontSize: 12, color: Colors.white), // Smaller font size
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                        textStyle: const TextStyle(fontSize: 12, color: Colors.white),
                       ),
                       child: const Text('Pre-order'),
                     ),
