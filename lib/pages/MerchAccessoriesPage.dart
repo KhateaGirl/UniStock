@@ -21,12 +21,23 @@ class _MerchAccessoriesPageState extends State<MerchAccessoriesPage> {
     'laces'
   ];
 
+  String _sortOrder = 'asc'; // 'asc' for ascending, 'desc' for descending
+
   Stream<QuerySnapshot> _fetchMerchData() {
+    // Firebase doesn’t support sorting directly on nested fields, so we handle sorting in the client
     return FirebaseFirestore.instance
         .collection('Inventory_stock')
         .doc('Merch & Accessories')
         .collection('items')
         .snapshots();
+  }
+
+  void _sortItems(List<Map<String, dynamic>> items) {
+    items.sort((a, b) {
+      int priceA = a['price'] ?? 0;
+      int priceB = b['price'] ?? 0;
+      return _sortOrder == 'asc' ? priceA.compareTo(priceB) : priceB.compareTo(priceA);
+    });
   }
 
   @override
@@ -86,7 +97,9 @@ class _MerchAccessoriesPageState extends State<MerchAccessoriesPage> {
                   PopupMenuButton<String>(
                     icon: Icon(Icons.sort),
                     onSelected: (String result) {
-                      // Sorting logic here
+                      setState(() {
+                        _sortOrder = result == 'Sort by price ascending' ? 'asc' : 'desc';
+                      });
                     },
                     itemBuilder: (BuildContext context) =>
                     <PopupMenuEntry<String>>[
@@ -103,7 +116,6 @@ class _MerchAccessoriesPageState extends State<MerchAccessoriesPage> {
                 ],
               ),
               SizedBox(height: 16),
-              // Use StreamBuilder to fetch data from Firestore
               StreamBuilder<DocumentSnapshot>(
                 stream: FirebaseFirestore.instance
                     .collection('Inventory_stock')
@@ -116,19 +128,21 @@ class _MerchAccessoriesPageState extends State<MerchAccessoriesPage> {
 
                   var data = snapshot.data!.data() as Map<String, dynamic>;
 
-                  // Ensure that each item has a price and other necessary fields
                   var items = data.entries.map((entry) {
                     var itemData = entry.value as Map<String, dynamic>;
                     return {
                       'label': entry.key,
-                      'imagePath': itemData['imagePath'] ?? '', // Provide a default empty string if imagePath is missing
-                      'price': itemData['price'] ?? 0, // Provide a default price of 0 if missing
+                      'imagePath': itemData['imagePath'] ?? '', // Default if imagePath is missing
+                      'price': itemData['price'] ?? 0, // Default price if missing
                     };
                   }).toList();
 
+                  // Sort the items based on the selected order
+                  _sortItems(items);
+
                   return buildItemGrid(context, items);
                 },
-              )
+              ),
             ],
           ),
         ),
@@ -166,7 +180,7 @@ class _MerchAccessoriesPageState extends State<MerchAccessoriesPage> {
               label: label,
               itemSize: requiresSizeSelection ? '' : null,
               imagePath: imagePath,
-              price: price, // Fallback value of 0 will be used if price is missing
+              price: price,
               quantity: 1,
               currentProfileInfo: widget.currentProfileInfo,
             ),
@@ -189,7 +203,7 @@ class _MerchAccessoriesPageState extends State<MerchAccessoriesPage> {
                   : Container(
                 height: 100,
                 color: Colors.grey,
-                child: Icon(Icons.image, color: Colors.white), // Default placeholder when image is missing
+                child: Icon(Icons.image, color: Colors.white), // Placeholder when image is missing
               ),
             ),
             SizedBox(height: 8),

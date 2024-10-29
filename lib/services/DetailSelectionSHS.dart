@@ -105,6 +105,7 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
     return false;
   }
 
+
   void handleCheckout() {
     if (_selectedSize.isEmpty) {
       showSizeNotSelectedDialog();
@@ -240,56 +241,60 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
                 SizedBox(height: 10),
                 _buildSizeSelector(),
               ],
+
               SizedBox(height: 10),
               Text(
                 'Price: ₱$displayPrice',
                 style: TextStyle(fontSize: 20),
               ),
               _buildQuantitySelector(),
-              SizedBox(height: 60),
-              Padding(
-                padding: const EdgeInsets.only(top: 16.0),
-                child: Text(
-                  'This item is either out of stock or requires a size selection.',
-                  style: TextStyle(color: Colors.red, fontSize: 14),
-                  textAlign: TextAlign.center,
+              SizedBox(height: 20),
+
+              // Show out-of-stock message only when no stock is available for the selected size
+              if (sizeQuantities[_selectedSize] == 0 || _selectedSize.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16.0),
+                  child: Text(
+                    'This item is either out of stock or requires a size selection.',
+                    style: TextStyle(color: Colors.red, fontSize: 14),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
-              ),
+
               Center(
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center, // Centers the buttons
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     ElevatedButton(
                       onPressed: disableButtons ? null : handleCheckout,
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8), // Smaller padding
-                        textStyle: const TextStyle(fontSize: 12), // Smaller font size
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        textStyle: const TextStyle(fontSize: 12),
                       ),
                       child: const Text('Checkout'),
                     ),
-                    const SizedBox(width: 8), // Space between buttons
+                    const SizedBox(width: 8),
                     OutlinedButton(
                       onPressed: disableButtons ? null : handleAddToCart,
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2), // Smaller padding
-                        textStyle: const TextStyle(fontSize: 12), // Smaller font size
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                        textStyle: const TextStyle(fontSize: 12),
                       ),
                       child: const Text('Add to Cart'),
                     ),
-                    const SizedBox(width: 8), // Space between buttons
+                    const SizedBox(width: 8),
                     ElevatedButton(
-                      onPressed: handlePreOrder, // Always enabled
+                      onPressed: handlePreOrder,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF4CAF50),
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2), // Smaller padding
-                        textStyle: const TextStyle(fontSize: 12, color: Colors.white), // Smaller font size
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                        textStyle: const TextStyle(fontSize: 12, color: Colors.white),
                       ),
                       child: const Text('Pre-order'),
                     ),
                   ],
                 ),
               ),
-
             ],
           ),
         ),
@@ -298,21 +303,28 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
   }
 
   Widget _buildSizeSelector() {
-    return DropdownButton<String>(
-      value: _selectedSize.isEmpty ? null : _selectedSize,
-      hint: Text('Select Size'),
-      items: availableSizes.map((size) {
-        return DropdownMenuItem(
-          value: size,
-          child: Text('$size'),
-        );
-      }).toList(),
-      onChanged: (value) {
-        setState(() {
-          _selectedSize = value ?? '';
-          print('Selected size changed to: $_selectedSize');
-        });
-      },
+    return AbsorbPointer(
+      absorbing: availableSizes.isEmpty, // Disable interactions when empty
+      child: DropdownButton<String>(
+        value: _selectedSize.isEmpty ? null : _selectedSize,
+        hint: Text('Select Size'),
+        items: availableSizes.map((size) {
+          return DropdownMenuItem(
+            value: size,
+            child: Text(size),
+          );
+        }).toList(),
+        onChanged: (value) {
+          setState(() {
+            _selectedSize = value ?? '';
+            _currentQuantity = 1; // Reset quantity to 1 for new size selection
+          });
+        },
+        disabledHint: Text(
+          'No Sizes Available',
+          style: TextStyle(color: Colors.grey),
+        ),
+      ),
     );
   }
 
@@ -325,7 +337,6 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
               ? () {
             setState(() {
               _currentQuantity--;
-              print('Quantity decreased: $_currentQuantity');
             });
           }
               : null,
@@ -333,15 +344,13 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
         ),
         Text('$_currentQuantity'),
         IconButton(
-          onPressed: () {
+          onPressed: _currentQuantity < (sizeQuantities[_selectedSize] ?? 0)
+              ? () {
             setState(() {
-              if ((_selectedSize.isEmpty && availableSizes.isEmpty) ||
-                  (sizeQuantities[_selectedSize] ?? 0) > _currentQuantity) {
-                _currentQuantity++;
-                print('Quantity increased: $_currentQuantity');
-              }
+              _currentQuantity++;
             });
-          },
+          }
+              : null,
           icon: Icon(Icons.add),
         ),
       ],

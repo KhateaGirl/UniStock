@@ -94,8 +94,11 @@ class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
   bool get showSizeOptions => widget.itemSize != null && availableSizes.isNotEmpty;
 
   bool get disableButtons {
-    return availableSizes.isEmpty ||
-        (_selectedSize.isNotEmpty && (sizeQuantities[_selectedSize] ?? 0) < _currentQuantity);
+    // Disable buttons if there are no sizes available or if the selected size is out of stock
+    if (availableSizes.isEmpty || _selectedSize.isEmpty || (sizeQuantities[_selectedSize] ?? 0) < _currentQuantity) {
+      return true;
+    }
+    return false;
   }
 
   void showSizeNotSelectedDialog() {
@@ -351,7 +354,7 @@ class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
       items: availableSizes.map((size) {
         return DropdownMenuItem(
           value: size,
-          child: Text('$size'),
+          child: Text(size),
         );
       }).toList(),
       onChanged: (value) {
@@ -359,6 +362,7 @@ class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
           _selectedSize = value ?? '';
           _displayPrice = sizePrices[_selectedSize] ?? widget.price;
           _availableQuantity = sizeQuantities[_selectedSize] ?? 0;
+          _currentQuantity = 1; // Reset quantity to 1 whenever a new size is selected
         });
       },
     );
@@ -380,13 +384,13 @@ class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
         ),
         Text('$_currentQuantity'),
         IconButton(
-          onPressed: () {
+          onPressed: (_selectedSize.isNotEmpty && (sizeQuantities[_selectedSize] ?? 0) > _currentQuantity)
+              ? () {
             setState(() {
-              if (_selectedSize.isNotEmpty && (sizeQuantities[_selectedSize] ?? 0) > _currentQuantity) {
-                _currentQuantity++;
-              }
+              _currentQuantity++;
             });
-          },
+          }
+              : null,
           icon: Icon(Icons.add),
         ),
       ],
