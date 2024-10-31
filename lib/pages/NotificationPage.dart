@@ -57,7 +57,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
     });
   }
 
-  // Function to mark all notifications as read
   Future<void> markAllAsRead() async {
     WriteBatch batch = FirebaseFirestore.instance.batch();
     final QuerySnapshot unreadNotifications = await FirebaseFirestore.instance
@@ -170,16 +169,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
               : 'No Timestamp',
           style: TextStyle(fontSize: 12, color: Colors.grey),
         ),
-        if (data['orderSummary'] != null)
+        if (data.containsKey('orderSummary') && data['orderSummary'] != null) // Ensure orderSummary exists
           TextButton(
             onPressed: () {
-              FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(widget.userId)
-                  .collection('notifications')
-                  .doc(docId)
-                  .update({'status': 'read'});
-
               Navigator.pushNamed(
                 context,
                 '/orderSummary',
@@ -228,7 +220,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 SizedBox(height: 20),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFFFFFF),
+                    backgroundColor: Color(0xFF046be0),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -236,7 +228,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
-                  child: Text('Close'),
+                  child: Text('Close', style: TextStyle(color: Colors.white)),
                 ),
               ],
             ),
@@ -304,8 +296,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
               Text("Size: ${item['itemSize'] ?? 'N/A'}", style: TextStyle(fontSize: 14)),
               SizedBox(height: 4),
               Text("Quantity: ${item['quantity'] ?? 'N/A'}", style: TextStyle(fontSize: 14)),
-              SizedBox(height: 4),
-              Text("Price per Piece: \$${item['pricePerPiece'] ?? 'N/A'}", style: TextStyle(fontSize: 14)),
             ],
           ),
         );
@@ -318,8 +308,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "Total Amount: \$${orderSummary.fold(0.0, (prev, item) => prev + (item['quantity'] ?? 0) * (item['pricePerPiece'] ?? 0)).toStringAsFixed(2)}",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+          "Total Quantity: ${orderSummary.fold<int>(0, (sum, item) => sum + ((item['quantity'] ?? 0) as int))}",
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         SizedBox(height: 16),
         Text(
