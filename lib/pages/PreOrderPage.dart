@@ -30,9 +30,11 @@ class _PreOrderPageState extends State<PreOrderPage> {
           .collection('users')
           .doc(user.uid)
           .collection('preorders')
+          .where('status', isNotEqualTo: 'approved')
           .snapshots()
           .map((snapshot) => _aggregatePreOrderItems(snapshot.docs))
           .cast<List<CartItem>>();
+
 
       preOrderItemsSubscription = preOrderItemsStream.listen((items) {
         if (mounted) {
@@ -117,18 +119,31 @@ class _PreOrderPageState extends State<PreOrderPage> {
       final WriteBatch batch = firestore.batch();
 
       List<Map<String, dynamic>> preOrderDetails = [];
+      List<Map<String, dynamic>> orderSummary = []; // This will store each item for the notification summary
 
       for (CartItem item in preOrderItems) {
         if (item.selected) {
-          preOrderDetails.add({
+          final itemData = {
             'label': item.label,
             'itemSize': item.selectedSize ?? '',
             'imagePath': item.imagePath,
             'quantity': item.quantity,
             'category': item.category,
             'courseLabel': item.courseLabel,
+          };
+
+          // Add item to preOrderDetails for saving the pre-order
+          preOrderDetails.add(itemData);
+
+          // Add item to orderSummary for the notification
+          orderSummary.add({
+            'label': item.label,
+            'itemSize': item.selectedSize ?? 'N/A',
+            'quantity': item.quantity,
+            'pricePerPiece': item.price,
           });
 
+          // Mark each document as deleted after adding to the batch
           for (DocumentReference preOrderDocRef in item.documentReferences) {
             batch.delete(preOrderDocRef);
           }
@@ -146,6 +161,15 @@ class _PreOrderPageState extends State<PreOrderPage> {
         try {
           await batch.commit();
           print("Pre-ordered items successfully.");
+
+          // Now add a notification with the order summary
+          await firestore.collection('users').doc(user.uid).collection('notifications').add({
+            'title': 'Pre-Order Approved',
+            'message': 'Your pre-order has been approved. View the summary below.',
+            'status': 'unread',
+            'timestamp': FieldValue.serverTimestamp(),
+            'orderSummary': orderSummary, // Add the order summary to the notification
+          });
         } catch (e) {
           print("Failed to complete pre-order operation: $e");
         }
