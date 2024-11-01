@@ -108,40 +108,40 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
                       print("Order placed successfully with ID: ${orderDocRef.id}");
 
-                      // Add in-app notification in Firestore under 'notifications'
-                      await FirebaseFirestore.instance
-                          .collection('users')
-                          .doc(widget.currentProfileInfo.userId)
-                          .collection('notifications')
-                          .add({
-                        'title': 'Order Placed',
-                        'message': 'Your order for ${widget.label} has been successfully placed!',
-                        'orderSummary': {
-                          'label': widget.label,
-                          'itemSize': widget.itemSize,
-                          'quantity': widget.quantity,
-                          'pricePerPiece': widget.unitPrice,
-                          'totalPrice': totalPrice,
-                        },
-                        'timestamp': FieldValue.serverTimestamp(),
-                        'status': 'unread',
-                      });
-
-                      print("In-app notification added to Firestore.");
-
-                      // Local notification for the device
-                      try {
-                        await notificationService.showNotification(
-                          widget.currentProfileInfo.userId,
-                          0,
-                          'Order Placed',
-                          'Your order for ${widget.label} has been successfully placed!',
-                          orderDocRef.id,
-                        );
-                        print("Device notification sent successfully.");
-                      } catch (notificationError) {
-                        print("Error sending device notification: $notificationError");
-                      }
+                      // // Add in-app notification in Firestore under 'notifications'
+                      // await FirebaseFirestore.instance
+                      //     .collection('users')
+                      //     .doc(widget.currentProfileInfo.userId)
+                      //     .collection('notifications')
+                      //     .add({
+                      //   'title': 'Order Placed',
+                      //   'message': 'Your order for ${widget.label} has been successfully placed!',
+                      //   'orderSummary': {
+                      //     'label': widget.label,
+                      //     'itemSize': widget.itemSize,
+                      //     'quantity': widget.quantity,
+                      //     'pricePerPiece': widget.unitPrice,
+                      //     'totalPrice': totalPrice,
+                      //   },
+                      //   'timestamp': FieldValue.serverTimestamp(),
+                      //   'status': 'unread',
+                      // });
+                      //
+                      // print("In-app notification added to Firestore.");
+                      //
+                      // // Local notification for the device
+                      // try {
+                      //   await notificationService.showNotification(
+                      //     widget.currentProfileInfo.userId,
+                      //     0,
+                      //     'Order Placed',
+                      //     'Your order for ${widget.label} has been successfully placed!',
+                      //     orderDocRef.id,
+                      //   );
+                      //   print("Device notification sent successfully.");
+                      // } catch (notificationError) {
+                      //   print("Error sending device notification: $notificationError");
+                      // }
 
                       await _notifyAdmin(
                         widget.currentProfileInfo.name,

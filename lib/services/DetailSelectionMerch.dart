@@ -64,14 +64,20 @@ class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
         if (data.containsKey(widget.label) &&
             data[widget.label]['sizes'] != null) {
           Map<String, dynamic> sizesMap = data[widget.label]['sizes'];
+
+          sizeQuantities = sizesMap.map((size, details) {
+            return MapEntry(size, details['quantity'] ?? 0);
+          });
+
+          sizePrices = sizesMap.map((size, details) {
+            return MapEntry(size, details['price'] != null ? details['price'] as int? : widget.price);
+          });
+
+          // Filter sizes to only include those with quantity > 0
           setState(() {
-            availableSizes = sizesMap.keys.toList();
-            sizeQuantities = sizesMap.map((size, details) {
-              return MapEntry(size, details['quantity'] ?? 0);
-            });
-            sizePrices = sizesMap.map((size, details) {
-              return MapEntry(size, details['price'] != null ? details['price'] as int? : widget.price);
-            });
+            availableSizes = sizeQuantities.keys
+                .where((size) => sizeQuantities[size]! > 0)
+                .toList();
           });
         } else {
           setState(() {

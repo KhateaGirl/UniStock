@@ -105,7 +105,6 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
     return false;
   }
 
-
   void handleCheckout() {
     if (_selectedSize.isEmpty) {
       showSizeNotSelectedDialog();
@@ -165,31 +164,35 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
   }
 
   void handlePreOrder() async {
-    String userId = widget.currentProfileInfo.userId;
+    if (_selectedSize.isEmpty) {
+      showSizeNotSelectedDialog();
+    } else {
+      String userId = widget.currentProfileInfo.userId;
 
-    final int? sizePrice = sizePrices[_selectedSize];
-    final int unitPrice = sizePrice ?? widget.price;
-    final int totalPrice = unitPrice * _currentQuantity;
+      final int? sizePrice = sizePrices[_selectedSize];
+      final int unitPrice = sizePrice ?? widget.price;
+      final int totalPrice = unitPrice * _currentQuantity;
 
-    CollectionReference preOrderRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .collection('preorders');
+      CollectionReference preOrderRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('preorders');
 
-    await preOrderRef.add({
-      'label': widget.label,
-      'itemSize': _selectedSize,
-      'imagePath': widget.imagePath,
-      'price': totalPrice,
-      'quantity': _currentQuantity,
-      'category': 'senior_high_items',
-      'status': 'pre-ordered',
-      'timestamp': FieldValue.serverTimestamp(),
-    });
+      await preOrderRef.add({
+        'label': widget.label,
+        'itemSize': _selectedSize,
+        'imagePath': widget.imagePath,
+        'price': totalPrice,
+        'quantity': _currentQuantity,
+        'category': 'senior_high_items',
+        'status': 'pre-ordered',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Item added to pre-order!')),
-    );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Item added to pre-order!')),
+      );
+    }
   }
 
   void showSizeNotSelectedDialog() {
@@ -250,7 +253,6 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
               _buildQuantitySelector(),
               SizedBox(height: 20),
 
-              // Show out-of-stock message only when no stock is available for the selected size
               if (sizeQuantities[_selectedSize] == 0 || _selectedSize.isEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 16.0),
@@ -284,7 +286,7 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
                     ),
                     const SizedBox(width: 8),
                     ElevatedButton(
-                      onPressed: handlePreOrder,
+                      onPressed: disableButtons ? null : handlePreOrder,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF4CAF50),
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),

@@ -153,23 +153,23 @@ class _CartPageState extends State<CartPage> {
           await batch.commit();
           print("Checked out items successfully and removed from cart.");
 
-          // Send local notification for successful checkout
-          await notificationService.showNotification(
-            user.uid,
-            orderDocRef.id.hashCode,
-            'Order Placed',
-            'Your order with Receipt ID ${orderDocRef.id} has been successfully processed.',
-            orderDocRef.id,
-          );
-
-          // Add in-app notification for successful checkout
-          await notificationsCollection.add({
-            'title': 'Order Placed',
-            'message': 'Your order with Receipt ID ${orderDocRef.id} has been successfully placed!',
-            'orderSummary': orderItems,
-            'timestamp': FieldValue.serverTimestamp(),
-            'status': 'unread',
-          });
+          // // Send local notification for successful checkout
+          // await notificationService.showNotification(
+          //   user.uid,
+          //   orderDocRef.id.hashCode,
+          //   'Order Placed',
+          //   'Your order with Receipt ID ${orderDocRef.id} has been successfully processed.',
+          //   orderDocRef.id,
+          // );
+          //
+          // // Add in-app notification for successful checkout
+          // await notificationsCollection.add({
+          //   'title': 'Order Placed',
+          //   'message': 'Your order with Receipt ID ${orderDocRef.id} has been successfully placed!',
+          //   'orderSummary': orderItems,
+          //   'timestamp': FieldValue.serverTimestamp(),
+          //   'status': 'unread',
+          // });
 
           // Notify admin about the new order with user details
           await _notifyAdmin(

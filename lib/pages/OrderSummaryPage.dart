@@ -33,16 +33,12 @@ class OrderSummaryPage extends StatelessWidget {
             return Center(child: Text("Order Summary Not Found"));
           }
 
-          // Check if orderSummary is a List or a Map
           List<Map<String, dynamic>> orderSummaryList;
           if (data['orderSummary'] is Map) {
-            // Convert single Map to a List with one entry
             orderSummaryList = [Map<String, dynamic>.from(data['orderSummary'])];
           } else if (data['orderSummary'] is List) {
-            // Cast as List<Map<String, dynamic>>
             orderSummaryList = List<Map<String, dynamic>>.from(data['orderSummary']);
           } else {
-            // Invalid format
             return Center(child: Text("Invalid Order Summary Format"));
           }
 
@@ -50,7 +46,6 @@ class OrderSummaryPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Top section with a large blue background and icon
                 Container(
                   color: Colors.blue,
                   padding: EdgeInsets.symmetric(vertical: 40),

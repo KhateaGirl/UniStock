@@ -89,12 +89,14 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
             }
           });
 
-          String defaultSize = sizesData.keys.isNotEmpty ? sizesData.keys.first : '';
+          // Filter sizes to only include those with quantity > 0
+          availableSizes = sizeQuantities.keys.where((size) => sizeQuantities[size]! > 0).toList();
+
+          String defaultSize = availableSizes.isNotEmpty ? availableSizes.first : '';
           int initialQuantity = defaultSize.isNotEmpty ? sizeQuantities[defaultSize] ?? 0 : 0;
           int initialPrice = defaultSize.isNotEmpty && sizePrices[defaultSize] != null ? sizePrices[defaultSize]! : widget.price;
 
           setState(() {
-            availableSizes = sizesData.keys.toList();
             _selectedSize = _selectedSize.isEmpty ? defaultSize : _selectedSize;
             _availableQuantity = initialQuantity;
             _displayPrice = initialPrice;
