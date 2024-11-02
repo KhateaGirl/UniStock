@@ -92,6 +92,14 @@ class _OrdersPageState extends State<OrdersPage> {
               final orderData = orderDocs[index].data() as Map<String, dynamic>;
               final orderItems = orderData['items'] as List<dynamic>;
 
+              // Calculate the total for this order
+              final int orderTotal = orderItems.fold<int>(
+                0,
+                    (sum, item) => sum + ((item['price'] ?? 0) as int) * ((item['quantity'] ?? 0) as int),
+              );
+
+
+
               // Convert Timestamp to DateTime for display
               final DateTime orderDateTime = orderData['orderDate'] != null
                   ? (orderData['orderDate'] as Timestamp).toDate()
@@ -157,28 +165,24 @@ class _OrdersPageState extends State<OrdersPage> {
                                   Text('Size: ${item['itemSize'] ?? 'N/A'}'),
                                   Text('Unit Price: ₱${item['price'] ?? 0}'),
                                   Text('Quantity: ${item['quantity'] ?? 0}'),
-                                  Text('Total: ₱${(item['price'] ?? 0) * (item['quantity'] ?? 0)}'),
                                   SizedBox(height: 5),
-                                  // Text(
-                                  //   'Category: ${item['category'] ?? 'Unknown'}',
-                                  //   style: TextStyle(
-                                  //     fontSize: 12,
-                                  //     color: Colors.grey[600],
-                                  //   ),
-                                  // ),
-                                  // Text(
-                                  //   'Course Label: ${item['courseLabel'] ?? 'Unknown'}',
-                                  //   style: TextStyle(
-                                  //     fontSize: 12,
-                                  //     color: Colors.grey[600],
-                                  //   ),
-                                  // ),
                                 ],
                               ),
                             );
                           },
                         ),
                       ),
+                    Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Text(
+                        'Transaction Total: ₱$orderTotal',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               );

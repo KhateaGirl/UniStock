@@ -143,7 +143,6 @@ class _PreOrderPageState extends State<PreOrderPage> {
             'pricePerPiece': item.price,
           });
 
-          // Mark each document as deleted after adding to the batch
           for (DocumentReference preOrderDocRef in item.documentReferences) {
             batch.delete(preOrderDocRef);
           }
@@ -161,15 +160,6 @@ class _PreOrderPageState extends State<PreOrderPage> {
         try {
           await batch.commit();
           print("Pre-ordered items successfully.");
-
-          // Now add a notification with the order summary
-          await firestore.collection('users').doc(user.uid).collection('notifications').add({
-            'title': 'Pre-Order Approved',
-            'message': 'Your pre-order has been approved. View the summary below.',
-            'status': 'unread',
-            'timestamp': FieldValue.serverTimestamp(),
-            'orderSummary': orderSummary, // Add the order summary to the notification
-          });
         } catch (e) {
           print("Failed to complete pre-order operation: $e");
         }

@@ -33,6 +33,10 @@ class OrderSummaryPage extends StatelessWidget {
             return Center(child: Text("Order Summary Not Found"));
           }
 
+          // Get student name and ID from the data
+          final String studentName = data['studentName'] ?? 'N/A';
+          final String studentId = data['studentId'] ?? 'N/A';
+
           List<Map<String, dynamic>> orderSummaryList;
           if (data['orderSummary'] is Map) {
             orderSummaryList = [Map<String, dynamic>.from(data['orderSummary'])];
@@ -70,13 +74,35 @@ class OrderSummaryPage extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 20),
+
+                // Display Student Name and ID
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Student Name: $studentName',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Student ID: $studentId',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ],
+                  ),
+                ),
+
+                SizedBox(height: 20),
+
+                // Display the list of items in the order
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       ...orderSummaryList.map((item) {
-                        // Displaying correct price per piece and quantity
                         final int quantity = item['quantity'] ?? 0;
                         final double pricePerPiece = (item['pricePerPiece'] ?? 0).toDouble();
 
