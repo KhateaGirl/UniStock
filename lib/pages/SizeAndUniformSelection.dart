@@ -47,14 +47,20 @@ class _CollegeUniSelectionPageState extends State<CollegeUniSelectionPage> {
 
           if (data != null) {
             // Safely access price and sizes, allowing for null
-            int? price = data['price'] != null ? (data['price'] is double ? (data['price'] as double).toInt() : data['price']) : null;
+            int? price = data['price'] != null
+                ? (data['price'] is double
+                    ? (data['price'] as double).toInt()
+                    : data['price'])
+                : null;
 
             return {
               'id': doc.id,
               'label': data['label'] ?? 'Unknown Label',
               'price': price,
               'imagePath': data['imageUrl'] ?? '',
-              'sizes': data.containsKey('sizes') ? data['sizes'] : {}, // Safely include sizes data if it exists
+              'sizes': data.containsKey('sizes')
+                  ? data['sizes']
+                  : {}, // Safely include sizes data if it exists
             };
           } else {
             // Handle the case where data is null (fallback or empty map)
@@ -123,55 +129,57 @@ class _CollegeUniSelectionPageState extends State<CollegeUniSelectionPage> {
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text(
-                'Select your items for ${widget.courseLabel}',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Select your items for ${widget.courseLabel}',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Sort and Filter',
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        PopupMenuButton<String>(
+                          icon: Icon(Icons.sort),
+                          onSelected: (String result) {
+                            setState(() {
+                              selectedSortOption = result;
+                              sortItems(result);
+                            });
+                          },
+                          itemBuilder: (BuildContext context) =>
+                              <PopupMenuEntry<String>>[
+                            const PopupMenuItem<String>(
+                              value: 'Sort by price ascending',
+                              child: Text('Sort by price ascending'),
+                            ),
+                            const PopupMenuItem<String>(
+                              value: 'Sort by price descending',
+                              child: Text('Sort by price descending'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 16),
+                    buildItemGrid(context),
+                    SizedBox(height: 16),
+                    buildNoSizeOption(context, 'No possible size?'),
+                  ],
                 ),
               ),
-              SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Sort and Filter',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  PopupMenuButton<String>(
-                    icon: Icon(Icons.sort),
-                    onSelected: (String result) {
-                      setState(() {
-                        selectedSortOption = result;
-                        sortItems(result);
-                      });
-                    },
-                    itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                      const PopupMenuItem<String>(
-                        value: 'Sort by price ascending',
-                        child: Text('Sort by price ascending'),
-                      ),
-                      const PopupMenuItem<String>(
-                        value: 'Sort by price descending',
-                        child: Text('Sort by price descending'),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              SizedBox(height: 16),
-              buildItemGrid(context),
-              SizedBox(height: 16),
-              buildNoSizeOption(context, 'No possible size?'),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 
@@ -239,36 +247,37 @@ class _CollegeUniSelectionPageState extends State<CollegeUniSelectionPage> {
             Expanded(
               child: imagePath.isNotEmpty
                   ? Image.network(
-                imagePath,
-                fit: BoxFit.contain, // Make the image fill the available space
-                width: double.infinity,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: Colors.grey[300],
-                    child: Center(
-                      child: Text(
-                        'Image not available',
-                        style: TextStyle(
-                          color: Colors.black54,
-                          fontSize: 14,
+                      imagePath,
+                      fit: BoxFit
+                          .contain, // Make the image fill the available space
+                      width: double.infinity,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: Colors.grey[300],
+                          child: Center(
+                            child: Text(
+                              'Image not available',
+                              style: TextStyle(
+                                color: Colors.black54,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    )
+                  : Container(
+                      color: Colors.grey[300],
+                      child: Center(
+                        child: Text(
+                          'Image not available',
+                          style: TextStyle(
+                            color: Colors.black54,
+                            fontSize: 14,
+                          ),
                         ),
                       ),
                     ),
-                  );
-                },
-              )
-                  : Container(
-                color: Colors.grey[300],
-                child: Center(
-                  child: Text(
-                    'Image not available',
-                    style: TextStyle(
-                      color: Colors.black54,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -340,7 +349,6 @@ class _CollegeUniSelectionPageState extends State<CollegeUniSelectionPage> {
       ),
     );
   }
-
 
   Widget buildNoSizeOption(BuildContext context, String text) {
     return Container(

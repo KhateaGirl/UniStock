@@ -59,10 +59,51 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  void _showQuickView(String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.network(
+                      imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.broken_image,
+                                size: 50, color: Colors.white),
+                            Text('Image failed to load',
+                                style: TextStyle(color: Colors.white)),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isMobile = context.isMobileDevice;
-    final bool isTablet = context.isTabletDevice;
 
     return Scaffold(
       appBar: AppBar(
@@ -86,7 +127,8 @@ class _HomePageState extends State<HomePage> {
         centerTitle: true,
         actions: <Widget>[
           IconButton(
-            icon: Icon(Icons.notifications, color: Colors.white, size: isMobile ? 20.0 : 24.0),
+            icon: Icon(Icons.notifications,
+                color: Colors.white, size: isMobile ? 20.0 : 24.0),
             onPressed: () {
               Navigator.push(
                 context,
@@ -98,7 +140,8 @@ class _HomePageState extends State<HomePage> {
             },
           ),
           IconButton(
-            icon: Icon(Icons.shopping_cart, color: Colors.white, size: isMobile ? 20.0 : 24.0),
+            icon: Icon(Icons.shopping_cart,
+                color: Colors.white, size: isMobile ? 20.0 : 24.0),
             onPressed: () {
               Navigator.push(
                 context,
@@ -107,7 +150,8 @@ class _HomePageState extends State<HomePage> {
             },
           ),
           IconButton(
-            icon: Icon(Icons.shopping_bag, color: Colors.white, size: isMobile ? 20.0 : 24.0),
+            icon: Icon(Icons.shopping_bag,
+                color: Colors.white, size: isMobile ? 20.0 : 24.0),
             onPressed: () {
               Navigator.push(
                 context,
@@ -117,110 +161,134 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator())
-          : Column(
-        children: <Widget>[
-          Container(
-            height: isMobile
-                ? MediaQuery.of(context).size.height * 0.25
-                : MediaQuery.of(context).size.height * 0.3,
-            width: double.infinity,
-            child: _imageUrls.isNotEmpty
-                ? PageView.builder(
-              onPageChanged: (index) {
-                setState(() {
-                  _currentIndex = index;
-                });
-              },
-              itemCount: _imageUrls.length,
-              itemBuilder: (context, index) {
-                return Container(
-                  width: MediaQuery.of(context).size.width,
-                  child: Image.network(
-                    _imageUrls[index],
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.broken_image, size: 50),
-                          Text('Image failed to load'),
-                        ],
-                      );
-                    },
-                  ),
-                );
-              },
-            )
-                : Center(child: Text('No announcements available')),
-          ),
-          if (_imageUrls.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: DotsIndicator(
-                dotsCount: _imageUrls.length,
-                position: _currentIndex.toDouble(),
-                decorator: DotsDecorator(
-                  activeColor: Colors.blue,
-                  size: isMobile ? Size(6.0, 6.0) : Size(8.0, 8.0),
-                  activeSize: isMobile ? Size(10.0, 10.0) : Size(12.0, 12.0),
-                ),
-              ),
-            ),
-          SizedBox(height: isMobile ? 8 : 10),
-          Divider(
-            color: Colors.grey,
-            height: 1,
-            thickness: 1,
-          ),
-          Container(
-            width: double.infinity,
-            height: isMobile ? 150 : 250,
-            color: Colors.grey[200],
-            child: Center(
-              child: Text(
-                'Announcements and Restrictions',
-                style: TextStyle(
-                  fontSize: isMobile ? 16 : 18,
-                  color: Colors.grey[600],
-                ),
-              ),
-            ),
-          ),
-          SizedBox(height: isMobile ? 20 : 50),
+      body: Column(
+        children: [
           Expanded(
-            child: Container(
-              color: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end, // Pushes the navigation items to the bottom
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 20.0), // Add space between previous content
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: widget.navigationItems
-                          .map((item) => Flexible(
-                        flex: 1,
-                        child: buildBottomNavItem(
-                            item['icon'], item['label'], item['onPressed'], isMobile),
-                      ))
-                          .toList(),
-                    ),
-                  ),
+            child: RefreshIndicator(
+              onRefresh: _fetchAnnouncementImages,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(0),
+                children: <Widget>[
+                  _isLoading
+                      ? Center(child: CircularProgressIndicator())
+                      : Column(
+                          children: [
+                            Container(
+                              height: isMobile
+                                  ? MediaQuery.of(context).size.height * 0.25
+                                  : MediaQuery.of(context).size.height * 0.3,
+                              width: double.infinity,
+                              child: _imageUrls.isNotEmpty
+                                  ? PageView.builder(
+                                      onPageChanged: (index) {
+                                        setState(() {
+                                          _currentIndex = index;
+                                        });
+                                      },
+                                      itemCount: _imageUrls.length,
+                                      itemBuilder: (context, index) {
+                                        return GestureDetector(
+                                          onTap: () {
+                                            _showQuickView(_imageUrls[index]);
+                                          },
+                                          child: Container(
+                                            width:
+                                                MediaQuery.of(context).size.width,
+                                            child: Image.network(
+                                              _imageUrls[index],
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (context, error,
+                                                  stackTrace) {
+                                                return Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Icon(Icons.broken_image,
+                                                        size: 50),
+                                                    Text('Image failed to load'),
+                                                  ],
+                                                );
+                                              },
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    )
+                                  : Center(
+                                      child: Text('No announcements available')),
+                            ),
+                            if (_imageUrls.isNotEmpty)
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 8.0),
+                                child: DotsIndicator(
+                                  dotsCount: _imageUrls.length,
+                                  position: _currentIndex.toDouble(),
+                                  decorator: DotsDecorator(
+                                    activeColor: Colors.blue,
+                                    size: isMobile
+                                        ? Size(6.0, 6.0)
+                                        : Size(8.0, 8.0),
+                                    activeSize: isMobile
+                                        ? Size(10.0, 10.0)
+                                        : Size(12.0, 12.0),
+                                  ),
+                                ),
+                              ),
+                            SizedBox(height: isMobile ? 8 : 10),
+                            Divider(
+                              color: Colors.grey,
+                              height: 1,
+                              thickness: 1,
+                            ),
+                            Container(
+                              width: double.infinity,
+                              height: isMobile ? 150 : 250,
+                              color: Colors.grey[200],
+                              child: Center(
+                                child: Text(
+                                  'Announcements and Restrictions',
+                                  style: TextStyle(
+                                    fontSize: isMobile ? 16 : 18,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: isMobile ? 20 : 50),
+                          ],
+                        ),
                 ],
               ),
-            )
-
+            ),
+          ),
+          // Bottom Navigation Row
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: widget.navigationItems
+                  .map((item) => Flexible(
+                        flex: 1,
+                        child: buildBottomNavItem(
+                          item['icon'],
+                          item['label'],
+                          item['onPressed'],
+                          isMobile,
+                        ),
+                      ))
+                  .toList(),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget buildBottomNavItem(
-      IconData icon, String categoryName, VoidCallback onPressed, bool isMobile) {
+  Widget buildBottomNavItem(IconData icon, String categoryName,
+      VoidCallback onPressed, bool isMobile) {
     return GestureDetector(
       onTap: onPressed,
       child: Column(
