@@ -1,4 +1,3 @@
-import 'package:UNISTOCK/pages/OrdersPage.dart' as UNISTOCKOrder;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -9,18 +8,18 @@ class Order {
   final int quantity;
   final int price;
   final Timestamp orderDate;
-  final String category;      // Add category field
-  final String courseLabel;   // Add course label field
-  final String? status;       // Add status field for additional checks
+  final String category;
+  final String courseLabel;
+  final String? status;
 
   Order({
     required this.itemName,
     required this.quantity,
     required this.price,
     required this.orderDate,
-    required this.category,    // Initialize category
-    required this.courseLabel, // Initialize courseLabel
-    this.status,               // Initialize status
+    required this.category,
+    required this.courseLabel,
+    this.status,
   });
 }
 
@@ -31,20 +30,54 @@ class OrdersPage extends StatefulWidget {
 
 class _OrdersPageState extends State<OrdersPage> {
   final FirebaseAuth auth = FirebaseAuth.instance;
-  int? _expandedIndex; // To track which card is currently expanded
+  int? _expandedIndex;
 
-  Stream<QuerySnapshot> _getOrdersStream() {
+  Future<List<Map<String, dynamic>>> _fetchOrders() async {
     final User? user = auth.currentUser;
     if (user == null) {
-      return Stream.empty();
+      return [];
     }
 
-    return FirebaseFirestore.instance
+    List<Map<String, dynamic>> allOrders = [];
+
+    // Fetch orders from users/{userId}/orders collection for the current user
+    QuerySnapshot userOrdersSnapshot = await FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
         .collection('orders')
         .orderBy('orderDate', descending: true)
-        .snapshots();
+        .get();
+
+    for (var doc in userOrdersSnapshot.docs) {
+      var orderData = doc.data() as Map<String, dynamic>;
+      allOrders.add({
+        'receiptId': doc.id,
+        'orderDate': orderData['orderDate'] as Timestamp,
+        'items': orderData['items'] as List<dynamic>,
+      });
+    }
+
+    // Fetch approved preorders from approved_preorders collection where userId matches the current user
+    QuerySnapshot approvedPreordersSnapshot = await FirebaseFirestore.instance
+        .collection('approved_preorders')
+        .where('userId', isEqualTo: user.uid)
+        .orderBy('preOrderDate', descending: true)
+        .get();
+
+    for (var doc in approvedPreordersSnapshot.docs) {
+      var preorderData = doc.data() as Map<String, dynamic>;
+      allOrders.add({
+        'receiptId': doc.id,
+        'orderDate': preorderData['preOrderDate'] as Timestamp,
+        'items': preorderData['items'] as List<dynamic>,
+      });
+    }
+
+    // Sort orders by orderDate in descending order
+    allOrders.sort((a, b) =>
+        (b['orderDate'] as Timestamp).compareTo(a['orderDate'] as Timestamp));
+
+    return allOrders;
   }
 
   @override
@@ -68,8 +101,8 @@ class _OrdersPageState extends State<OrdersPage> {
         title: Text('My Orders'),
         centerTitle: true,
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: _getOrdersStream(),
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: _fetchOrders(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
@@ -79,31 +112,23 @@ class _OrdersPageState extends State<OrdersPage> {
             return Center(child: Text('Error: ${snapshot.error}'));
           }
 
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return Center(child: Text('No orders found.'));
           }
 
-          final orderDocs = snapshot.data!.docs;
-
+          final orderDocs = snapshot.data!;
           return ListView.builder(
             padding: EdgeInsets.all(16.0),
             itemCount: orderDocs.length,
             itemBuilder: (context, index) {
-              final orderData = orderDocs[index].data() as Map<String, dynamic>;
+              final orderData = orderDocs[index];
               final orderItems = orderData['items'] as List<dynamic>;
-
-              // Calculate the total for this order
               final int orderTotal = orderItems.fold<int>(
                 0,
-                    (sum, item) => sum + ((item['price'] ?? 0) as int) * ((item['quantity'] ?? 0) as int),
+                    (sum, item) =>
+                sum + ((item['price'] ?? 0) as int) * ((item['quantity'] ?? 0) as int),
               );
-
-
-
-              // Convert Timestamp to DateTime for display
-              final DateTime orderDateTime = orderData['orderDate'] != null
-                  ? (orderData['orderDate'] as Timestamp).toDate()
-                  : DateTime.now();
+              final DateTime orderDateTime = (orderData['orderDate'] as Timestamp).toDate();
 
               return Card(
                 margin: EdgeInsets.symmetric(vertical: 8.0),
@@ -112,7 +137,7 @@ class _OrdersPageState extends State<OrdersPage> {
                   children: [
                     ListTile(
                       title: Text(
-                        'Receipt ID: ${orderDocs[index].id}',
+                        'Receipt ID: ${orderData['receiptId']}',
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                       ),
                       subtitle: Text(
@@ -129,10 +154,8 @@ class _OrdersPageState extends State<OrdersPage> {
                         onPressed: () {
                           setState(() {
                             if (_expandedIndex == index) {
-                              // If the current card is already expanded, collapse it
                               _expandedIndex = null;
                             } else {
-                              // Expand the new card and collapse any previous one
                               _expandedIndex = index;
                             }
                           });
