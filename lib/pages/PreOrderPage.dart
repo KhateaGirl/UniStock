@@ -119,10 +119,14 @@ class _PreOrderPageState extends State<PreOrderPage> {
       final WriteBatch batch = firestore.batch();
 
       List<Map<String, dynamic>> preOrderDetails = [];
-      List<Map<String, dynamic>> orderSummary = []; // This will store each item for the notification summary
+      List<Map<String, dynamic>> orderSummary = [];
+      double totalOrderPrice = 0.0;
 
       for (CartItem item in preOrderItems) {
         if (item.selected) {
+          final int itemTotalPrice = item.price * item.quantity;
+          totalOrderPrice += itemTotalPrice;
+
           final itemData = {
             'label': item.label,
             'itemSize': item.selectedSize ?? '',
@@ -130,19 +134,20 @@ class _PreOrderPageState extends State<PreOrderPage> {
             'quantity': item.quantity,
             'category': item.category,
             'courseLabel': item.courseLabel,
+            'pricePerPiece': item.price,
+            'totalPrice': itemTotalPrice, // Add total price for this item (quantity * price)
           };
 
-          // Add item to preOrderDetails for saving the pre-order
           preOrderDetails.add(itemData);
-
-          // Add item to orderSummary for the notification
           orderSummary.add({
             'label': item.label,
             'itemSize': item.selectedSize ?? 'N/A',
             'quantity': item.quantity,
             'pricePerPiece': item.price,
+            'totalPrice': itemTotalPrice, // Include total price per item for reference
           });
 
+          // Remove the original pre-order documents
           for (DocumentReference preOrderDocRef in item.documentReferences) {
             batch.delete(preOrderDocRef);
           }
@@ -155,6 +160,7 @@ class _PreOrderPageState extends State<PreOrderPage> {
           'items': preOrderDetails,
           'preOrderDate': FieldValue.serverTimestamp(),
           'status': 'pre-order confirmed',
+          'totalOrderPrice': totalOrderPrice, // Save total order price
         });
 
         try {
