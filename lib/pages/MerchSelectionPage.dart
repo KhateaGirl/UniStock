@@ -71,7 +71,7 @@ class _MerchSelectionPageState extends State<MerchSelectionPage> {
             unitPrice: unitPrice,
             price: totalPrice,
             quantity: _currentQuantity,
-            category: 'merch_and_accessories',
+            category: 'Merch & Accessories',
             currentProfileInfo: widget.currentProfileInfo,
           ),
         ),
