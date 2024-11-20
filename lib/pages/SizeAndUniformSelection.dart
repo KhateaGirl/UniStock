@@ -39,14 +39,9 @@ class _CollegeUniSelectionPageState extends State<CollegeUniSelectionPage> {
 
       setState(() {
         uniformItems = querySnapshot.docs.map((doc) {
-          // Get the document data and check if it's not null
           Map<String, dynamic>? data = doc.data() as Map<String, dynamic>?;
 
-          // Debug: Print each document data to confirm structure
-          print('Debug: Fetched document data: $data');
-
           if (data != null) {
-            // Safely access price and sizes, allowing for null
             int? price = data['price'] != null ? (data['price'] is double ? (data['price'] as double).toInt() : data['price']) : null;
 
             return {
@@ -54,10 +49,9 @@ class _CollegeUniSelectionPageState extends State<CollegeUniSelectionPage> {
               'label': data['label'] ?? 'Unknown Label',
               'price': price,
               'imagePath': data['imageUrl'] ?? '',
-              'sizes': data.containsKey('sizes') ? data['sizes'] : {}, // Safely include sizes data if it exists
+              'sizes': data.containsKey('sizes') ? data['sizes'] : {},
             };
           } else {
-            // Handle the case where data is null (fallback or empty map)
             return {
               'id': doc.id,
               'label': 'Unknown Label',
@@ -67,12 +61,11 @@ class _CollegeUniSelectionPageState extends State<CollegeUniSelectionPage> {
             };
           }
         }).toList();
-        _isLoading = false; // Data loaded
+        _isLoading = false;
       });
     } catch (e) {
-      print('Error fetching items: $e');
       setState(() {
-        _isLoading = false; // Stop loading even on failure
+        _isLoading = false;
       });
     }
   }
@@ -187,13 +180,10 @@ class _CollegeUniSelectionPageState extends State<CollegeUniSelectionPage> {
       itemCount: uniformItems.length,
       itemBuilder: (context, index) {
         final item = uniformItems[index];
-
-        // Check if image or price is missing
         final String imagePath = item['imagePath'] ?? '';
         final String label = item['label'] ?? 'No Label Available';
         final int? price = item['price'];
 
-        // If both image and price are missing, we consider the item unavailable
         if (imagePath.isEmpty && price == null) {
           return buildSoldOutItem(label);
         } else {
@@ -222,7 +212,7 @@ class _CollegeUniSelectionPageState extends State<CollegeUniSelectionPage> {
               label: label,
               itemSize: null,
               imagePath: imagePath,
-              price: price ?? 0, // Set price to 0 if it's null
+              price: price ?? 0,
               quantity: 1,
               currentProfileInfo: widget.currentProfileInfo,
             ),
@@ -240,7 +230,7 @@ class _CollegeUniSelectionPageState extends State<CollegeUniSelectionPage> {
               child: imagePath.isNotEmpty
                   ? Image.network(
                 imagePath,
-                fit: BoxFit.contain, // Make the image fill the available space
+                fit: BoxFit.contain,
                 width: double.infinity,
                 errorBuilder: (context, error, stackTrace) {
                   return Container(

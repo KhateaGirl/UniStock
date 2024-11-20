@@ -88,10 +88,7 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
               return MapEntry(size, 0);
             }
           });
-
-          // Filter sizes to only include those with quantity > 0
           availableSizes = sizeQuantities.keys.where((size) => sizeQuantities[size]! > 0).toList();
-
           String defaultSize = availableSizes.isNotEmpty ? availableSizes.first : '';
           int initialQuantity = defaultSize.isNotEmpty ? sizeQuantities[defaultSize] ?? 0 : 0;
           int initialPrice = defaultSize.isNotEmpty && sizePrices[defaultSize] != null ? sizePrices[defaultSize]! : widget.price;
@@ -279,7 +276,6 @@ class _DetailSelectionCOLState extends State<DetailSelectionCOL> {
               _buildQuantitySelector(),
               const SizedBox(height: 30),
 
-              // Show out-of-stock message only when no stock is available for the selected size
               if (_availableQuantity == 0 || _selectedSize.isEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 16.0),

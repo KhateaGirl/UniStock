@@ -112,7 +112,6 @@ class _CartPageState extends State<CartPage> {
     final User? user = auth.currentUser;
 
     if (user != null) {
-      // Fetch user's profile information, including their name
       DocumentSnapshot userDoc = await firestore.collection('users').doc(user.uid).get();
       String userName = userDoc['name'] ?? 'Unknown User';
 
@@ -151,27 +150,7 @@ class _CartPageState extends State<CartPage> {
 
         try {
           await batch.commit();
-          print("Checked out items successfully and removed from cart.");
 
-          // // Send local notification for successful checkout
-          // await notificationService.showNotification(
-          //   user.uid,
-          //   orderDocRef.id.hashCode,
-          //   'Order Placed',
-          //   'Your order with Receipt ID ${orderDocRef.id} has been successfully processed.',
-          //   orderDocRef.id,
-          // );
-          //
-          // // Add in-app notification for successful checkout
-          // await notificationsCollection.add({
-          //   'title': 'Order Placed',
-          //   'message': 'Your order with Receipt ID ${orderDocRef.id} has been successfully placed!',
-          //   'orderSummary': orderItems,
-          //   'timestamp': FieldValue.serverTimestamp(),
-          //   'status': 'unread',
-          // });
-
-          // Notify admin about the new order with user details
           await _notifyAdmin(
             orderId: orderDocRef.id,
             userId: user.uid,
@@ -180,13 +159,10 @@ class _CartPageState extends State<CartPage> {
           );
 
         } catch (e) {
-          print("Failed to complete batch operation: $e");
         }
       } else {
-        print("No items selected for checkout.");
       }
     } else {
-      print("User not logged in");
     }
   }
 
@@ -199,7 +175,6 @@ class _CartPageState extends State<CartPage> {
     final FirebaseFirestore firestore = FirebaseFirestore.instance;
     CollectionReference adminNotifications = firestore.collection('admin_notifications');
 
-    // Calculate total order price and prepare item details
     StringBuffer itemDetailsBuffer = StringBuffer();
     double totalOrderPrice = 0.0;
 
@@ -210,7 +185,6 @@ class _CartPageState extends State<CartPage> {
           "${item['label']} (x${item['quantity']}): ₱${item['price'].toStringAsFixed(2)} each, Total: ₱${totalItemPrice.toStringAsFixed(2)}");
     }
 
-    // Construct the detailed message
     String detailedMessage = """
 A new order has been placed by:
 Student Name: $userName
@@ -230,9 +204,7 @@ Total Order Price: ₱${totalOrderPrice.toStringAsFixed(2)}
         'timestamp': FieldValue.serverTimestamp(),
         'status': 'unread',
       });
-      print("Admin has been notified of the new order.");
     } catch (e) {
-      print("Failed to notify admin: $e");
     }
   }
 

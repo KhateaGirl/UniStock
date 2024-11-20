@@ -10,6 +10,6 @@ class Order {
     required this.itemSize,
     required this.price,
     required this.quantity,
-    this.status = 'Processing', // Initial status
+    this.status = 'Processing',
   });
 }

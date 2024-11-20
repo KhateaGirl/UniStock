@@ -40,7 +40,6 @@ class _OrdersPageState extends State<OrdersPage> {
 
     List<Map<String, dynamic>> allOrders = [];
 
-    // Fetch orders from users/{userId}/orders collection for the current user
     QuerySnapshot userOrdersSnapshot = await FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
@@ -57,7 +56,6 @@ class _OrdersPageState extends State<OrdersPage> {
       });
     }
 
-    // Fetch approved preorders from approved_preorders collection where userId matches the current user
     QuerySnapshot approvedPreordersSnapshot = await FirebaseFirestore.instance
         .collection('approved_preorders')
         .where('userId', isEqualTo: user.uid)
@@ -73,7 +71,6 @@ class _OrdersPageState extends State<OrdersPage> {
       });
     }
 
-    // Sort orders by orderDate in descending order
     allOrders.sort((a, b) =>
         (b['orderDate'] as Timestamp).compareTo(a['orderDate'] as Timestamp));
 

@@ -54,7 +54,7 @@ class UniformPage extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       builder: (context) => CollegeUniformsPage(
-                        currentProfileInfo: currentProfileInfo, // Pass the ProfileInfo here
+                        currentProfileInfo: currentProfileInfo,
                       ),
                     ),
                   );
@@ -66,7 +66,7 @@ class UniformPage extends StatelessWidget {
                       children: [
                         ClipRRect(
                           borderRadius:
-                          BorderRadius.circular(15.0), // Rounded corners
+                          BorderRadius.circular(15.0),
                           child: Image.asset(
                             'assets/images/college uniform.png',
                             fit: BoxFit.cover,
@@ -93,7 +93,7 @@ class UniformPage extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       builder: (context) => SHSUniformsPage(
-                        currentProfileInfo: currentProfileInfo, // Pass the ProfileInfo here
+                        currentProfileInfo: currentProfileInfo,
                       ),
                     ),
                   );
@@ -105,7 +105,7 @@ class UniformPage extends StatelessWidget {
                       children: [
                         ClipRRect(
                           borderRadius:
-                          BorderRadius.circular(15.0), // Rounded corners
+                          BorderRadius.circular(15.0),
                           child: Image.asset(
                             'assets/images/shs uniform.png',
                             fit: BoxFit.cover,
@@ -132,7 +132,7 @@ class UniformPage extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       builder: (context) => ProwareShirtsPage(
-                        currentProfileInfo: currentProfileInfo, // Pass the ProfileInfo here
+                        currentProfileInfo: currentProfileInfo,
                       ),
                     ),
                   );
@@ -144,7 +144,7 @@ class UniformPage extends StatelessWidget {
                       children: [
                         ClipRRect(
                           borderRadius:
-                          BorderRadius.circular(15.0), // Rounded corners
+                          BorderRadius.circular(15.0),
                           child: Image.asset(
                             'assets/images/washdayshirt.png',
                             fit: BoxFit.cover,

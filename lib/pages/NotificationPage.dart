@@ -69,9 +69,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
     for (var doc in unreadNotifications.docs) {
       batch.update(doc.reference, {'status': 'read'});
     }
-
     await batch.commit();
-    print("All notifications marked as read");
   }
 
   @override
@@ -88,7 +86,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
         title: Text('Notifications', style: TextStyle(color: Colors.black)),
         centerTitle: true,
         actions: [
-          // "Mark all as read" button
           TextButton(
             onPressed: markAllAsRead,
             child: Text(
@@ -169,7 +166,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
               : 'No Timestamp',
           style: TextStyle(fontSize: 12, color: Colors.grey),
         ),
-        if (data.containsKey('orderSummary') && data['orderSummary'] != null) // Ensure orderSummary exists
+        if (data.containsKey('orderSummary') && data['orderSummary'] != null)
           TextButton(
             onPressed: () {
               Navigator.pushNamed(
@@ -191,7 +188,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
     final orderSummary = data['orderSummary'];
 
     if (orderSummary is! List) {
-      print("Error: orderSummary is not a list.");
       return;
     }
 

@@ -20,7 +20,6 @@ class _RegisterPageState extends State<RegisterPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Password validation regex pattern
   final String passwordPattern = r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#\$&*~]).{8,}$';
 
   @override
@@ -71,7 +70,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           const SizedBox(height: 20),
                           _buildInputField('EMAIL', email),
                           const SizedBox(height: 20),
-                          _buildInputField('STUDENT ID', studentId), // Added this line
+                          _buildInputField('STUDENT ID', studentId),
                           const SizedBox(height: 20),
                           _buildInputField('PASSWORD', password, isPassword: true),
                           const SizedBox(height: 20),
@@ -133,7 +132,7 @@ class _RegisterPageState extends State<RegisterPage> {
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(20),
                 borderSide: BorderSide(
-                  color: Color(0xFFFFEB3B), // Highlight color when focused
+                  color: Color(0xFFFFEB3B),
                   width: 2.0,
                 ),
               ),
@@ -163,7 +162,7 @@ class _RegisterPageState extends State<RegisterPage> {
     return InkWell(
       borderRadius: BorderRadius.circular(20),
       onTap: () async {
-        if (name.text.isEmpty || email.text.isEmpty || password.text.isEmpty || studentId.text.isEmpty) { // Check for student ID
+        if (name.text.isEmpty || email.text.isEmpty || password.text.isEmpty || studentId.text.isEmpty) {
           _showErrorDialog('Please fill in all fields.');
         } else if (!RegExp(passwordPattern).hasMatch(password.text)) {
           _showErrorDialog('Password must be at least 8 characters, include an uppercase letter, a lowercase letter, a number, and a special character.');
@@ -178,7 +177,7 @@ class _RegisterPageState extends State<RegisterPage> {
               'userId': userCredential.user!.uid,
               'name': name.text,
               'email': email.text,
-              'studentId': studentId.text, // Added this line
+              'studentId': studentId.text,
               'createdAt': Timestamp.now(),
             });
 

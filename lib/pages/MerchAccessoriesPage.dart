@@ -21,10 +21,9 @@ class _MerchAccessoriesPageState extends State<MerchAccessoriesPage> {
     'laces'
   ];
 
-  String _sortOrder = 'asc'; // 'asc' for ascending, 'desc' for descending
+  String _sortOrder = 'asc';
 
   Stream<QuerySnapshot> _fetchMerchData() {
-    // Firebase doesn’t support sorting directly on nested fields, so we handle sorting in the client
     return FirebaseFirestore.instance
         .collection('Inventory_stock')
         .doc('Merch & Accessories')
@@ -132,14 +131,11 @@ class _MerchAccessoriesPageState extends State<MerchAccessoriesPage> {
                     var itemData = entry.value as Map<String, dynamic>;
                     return {
                       'label': entry.key,
-                      'imagePath': itemData['imagePath'] ?? '', // Default if imagePath is missing
-                      'price': itemData['price'] ?? 0, // Default price if missing
+                      'imagePath': itemData['imagePath'] ?? '',
+                      'price': itemData['price'] ?? 0,
                     };
                   }).toList();
-
-                  // Sort the items based on the selected order
                   _sortItems(items);
-
                   return buildItemGrid(context, items);
                 },
               ),
@@ -203,7 +199,7 @@ class _MerchAccessoriesPageState extends State<MerchAccessoriesPage> {
                   : Container(
                 height: 100,
                 color: Colors.grey,
-                child: Icon(Icons.image, color: Colors.white), // Placeholder when image is missing
+                child: Icon(Icons.image, color: Colors.white),
               ),
             ),
             SizedBox(height: 8),

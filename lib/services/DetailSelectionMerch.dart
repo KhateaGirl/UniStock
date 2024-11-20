@@ -73,7 +73,6 @@ class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
             return MapEntry(size, details['price'] != null ? details['price'] as int? : widget.price);
           });
 
-          // Filter sizes to only include those with quantity > 0
           setState(() {
             availableSizes = sizeQuantities.keys
                 .where((size) => sizeQuantities[size]! > 0)
@@ -88,7 +87,6 @@ class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
         }
       }
     } catch (e) {
-      print('Error fetching sizes: $e');
       setState(() {
         availableSizes = [];
         sizeQuantities = {};
@@ -100,7 +98,6 @@ class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
   bool get showSizeOptions => widget.itemSize != null && availableSizes.isNotEmpty;
 
   bool get disableButtons {
-    // Disable buttons if there are no sizes available or if the selected size is out of stock
     if (availableSizes.isEmpty || _selectedSize.isEmpty || (sizeQuantities[_selectedSize] ?? 0) < _currentQuantity) {
       return true;
     }
@@ -368,7 +365,7 @@ class _DetailSelectionMerchState extends State<DetailSelectionMerch> {
           _selectedSize = value ?? '';
           _displayPrice = sizePrices[_selectedSize] ?? widget.price;
           _availableQuantity = sizeQuantities[_selectedSize] ?? 0;
-          _currentQuantity = 1; // Reset quantity to 1 whenever a new size is selected
+          _currentQuantity = 1;
         });
       },
     );

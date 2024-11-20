@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class OrderSummaryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    // Get the document ID and user ID from arguments
     final Map<String, dynamic> args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     final String userId = args['userId'];
     final String docId = args['docId'];
@@ -33,7 +32,6 @@ class OrderSummaryPage extends StatelessWidget {
             return Center(child: Text("Order Summary Not Found"));
           }
 
-          // Get student name and ID from the data
           final String studentName = data['studentName'] ?? 'N/A';
           final String studentId = data['studentId'] ?? 'N/A';
 
@@ -75,7 +73,6 @@ class OrderSummaryPage extends StatelessWidget {
                 ),
                 SizedBox(height: 20),
 
-                // Display Student Name and ID
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: Column(
@@ -96,7 +93,6 @@ class OrderSummaryPage extends StatelessWidget {
 
                 SizedBox(height: 20),
 
-                // Display the list of items in the order
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -118,7 +114,7 @@ class OrderSummaryPage extends StatelessWidget {
                                 color: Colors.grey.withOpacity(0.3),
                                 spreadRadius: 1,
                                 blurRadius: 5,
-                                offset: Offset(0, 3), // changes position of shadow
+                                offset: Offset(0, 3),
                               ),
                             ],
                           ),

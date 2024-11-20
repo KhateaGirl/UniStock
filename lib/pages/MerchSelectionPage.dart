@@ -72,7 +72,7 @@ class _MerchSelectionPageState extends State<MerchSelectionPage> {
             price: totalPrice,
             quantity: _currentQuantity,
             category: 'merch_and_accessories',
-            currentProfileInfo: widget.currentProfileInfo, // Pass the correct profile info here
+            currentProfileInfo: widget.currentProfileInfo,
           ),
         ),
       );
@@ -83,7 +83,6 @@ class _MerchSelectionPageState extends State<MerchSelectionPage> {
     if (widget.showSizeOptions && _selectedSize.isEmpty) {
       showSizeNotSelectedDialog();
     } else {
-      // Add to cart logic
     }
   }
 
@@ -117,7 +116,6 @@ class _MerchSelectionPageState extends State<MerchSelectionPage> {
             children: [
               GestureDetector(
                 onTap: () {
-                  // Implement pop-out image view here
                   _showFullImage(context);
                 },
                 child: Container(

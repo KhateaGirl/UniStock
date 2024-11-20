@@ -24,7 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    Firebase.initializeApp(); // Initialize Firebase
+    Firebase.initializeApp();
   }
 
   @override
@@ -32,7 +32,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: Color(0xFF046be0),
       body: Center(
-        child: SingleChildScrollView( // Wrap with SingleChildScrollView to prevent overflow
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,

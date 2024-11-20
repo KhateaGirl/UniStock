@@ -4,9 +4,9 @@ import 'package:UNISTOCK/pages/CartPage.dart';
 import 'package:UNISTOCK/pages/CheckoutPage.dart';
 
 class ProwareShirtsPage extends StatefulWidget {
-  final ProfileInfo currentProfileInfo; // Ensure this parameter is defined
+  final ProfileInfo currentProfileInfo;
 
-  ProwareShirtsPage({required this.currentProfileInfo}); // Required parameter in constructor
+  ProwareShirtsPage({required this.currentProfileInfo});
 
   @override
   _ProwareShirtsPageState createState() => _ProwareShirtsPageState();
@@ -14,11 +14,10 @@ class ProwareShirtsPage extends StatefulWidget {
 
 class _ProwareShirtsPageState extends State<ProwareShirtsPage> {
   String selectedSize = '';
-  String selectedShirtType = 'College'; // Default selection
+  String selectedShirtType = 'College';
   PageController _pageController = PageController(viewportFraction: 0.9);
   int _currentPage = 0;
 
-  // Image paths for shirts
   final String collegeShirtImage = 'assets/images/washdayshirt1.png';
   final String shsShirtImage = 'assets/images/SHS_WASHDAY.png';
 
@@ -42,7 +41,7 @@ class _ProwareShirtsPageState extends State<ProwareShirtsPage> {
               TextButton(
                 child: Text('OK'),
                 onPressed: () {
-                  Navigator.of(context).pop(); // Close the dialog
+                  Navigator.of(context).pop();
                 },
               ),
             ],
@@ -60,7 +59,7 @@ class _ProwareShirtsPageState extends State<ProwareShirtsPage> {
               TextButton(
                 child: Text('OK'),
                 onPressed: () {
-                  Navigator.of(context).pop(); // Close the dialog
+                  Navigator.of(context).pop();
                 },
               ),
             ],
@@ -196,11 +195,9 @@ class _ProwareShirtsPageState extends State<ProwareShirtsPage> {
                 children: [
                   ElevatedButton(
                     onPressed: () {
-                      // Handle checkout
                       if (selectedSize.isNotEmpty) {
-                        final int unitPrice = 195; // Define the unit price
-                        final int totalPrice = unitPrice * 1; // Assuming quantity is 1 for now
-
+                        final int unitPrice = 195;
+                        final int totalPrice = unitPrice * 1;
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -211,15 +208,14 @@ class _ProwareShirtsPageState extends State<ProwareShirtsPage> {
                               imagePath: selectedShirtType == 'College'
                                   ? collegeShirtImage
                                   : shsShirtImage,
-                              unitPrice: unitPrice, // Pass the unit price here
-                              price: totalPrice, // Pass the total price here
+                              unitPrice: unitPrice,
+                              price: totalPrice,
                               quantity: 1,
-                              currentProfileInfo: widget.currentProfileInfo, // Pass the profile info
+                              currentProfileInfo: widget.currentProfileInfo,
                             ),
                           ),
                         );
                       } else {
-                        // Show an alert dialog to prompt size selection
                         showDialog(
                           context: context,
                           builder: (BuildContext context) {
@@ -231,7 +227,7 @@ class _ProwareShirtsPageState extends State<ProwareShirtsPage> {
                                 TextButton(
                                   child: Text('OK'),
                                   onPressed: () {
-                                    Navigator.of(context).pop(); // Close the dialog
+                                    Navigator.of(context).pop();
                                   },
                                 ),
                               ],
@@ -259,7 +255,6 @@ class _ProwareShirtsPageState extends State<ProwareShirtsPage> {
                   SizedBox(width: 20),
                   OutlinedButton(
                     onPressed: () {
-                      // Handle add to cart
                       handleAddToCart();
                     },
                     style: OutlinedButton.styleFrom(
@@ -324,7 +319,7 @@ class _ProwareShirtsPageState extends State<ProwareShirtsPage> {
       return GestureDetector(
         onTap: () {
           setState(() {
-            selectedSize = size; // Update selected size
+            selectedSize = size;
           });
         },
         child: Container(

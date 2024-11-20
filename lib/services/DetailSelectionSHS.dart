@@ -39,7 +39,6 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
 
   Future<void> _fetchSizesFromFirestore() async {
     try {
-      print('Attempting to fetch document for label: ${widget.label}');
 
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
           .collection('Inventory_stock')
@@ -55,7 +54,6 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
         if (data.containsKey('sizes') && data['sizes'] != null) {
           Map<String, dynamic> sizesMap = data['sizes'] as Map<String, dynamic>;
 
-          print('Fetched sizes from Firestore: $sizesMap');
 
           setState(() {
             availableSizes = sizesMap.keys.toList();
@@ -66,10 +64,8 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
 
             availableSizes = availableSizes.where((size) => sizeQuantities[size]! > 0).toList();
 
-            print('Available sizes after filtering: $availableSizes');
           });
         } else {
-          print('Sizes are not specified or available.');
           setState(() {
             availableSizes = [];
             sizeQuantities = {};
@@ -77,10 +73,8 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
           });
         }
       } else {
-        print('No document found with label: ${widget.label}');
       }
     } catch (e) {
-      print('Error fetching sizes: $e');
       setState(() {
         availableSizes = [];
         sizeQuantities = {};
@@ -306,7 +300,7 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
 
   Widget _buildSizeSelector() {
     return AbsorbPointer(
-      absorbing: availableSizes.isEmpty, // Disable interactions when empty
+      absorbing: availableSizes.isEmpty,
       child: DropdownButton<String>(
         value: _selectedSize.isEmpty ? null : _selectedSize,
         hint: Text('Select Size'),
@@ -319,7 +313,7 @@ class _DetailSelectionSHSState extends State<DetailSelectionSHS> {
         onChanged: (value) {
           setState(() {
             _selectedSize = value ?? '';
-            _currentQuantity = 1; // Reset quantity to 1 for new size selection
+            _currentQuantity = 1;
           });
         },
         disabledHint: Text(

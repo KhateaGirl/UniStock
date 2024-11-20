@@ -33,7 +33,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _contactNumberController = TextEditingController(text: widget.profileInfo.contactNumber);
     _emailController = TextEditingController(text: widget.profileInfo.email);
     _addressController = TextEditingController(text: widget.profileInfo.address);
-    _passwordController = TextEditingController(text: ''); // Empty password initially
+    _passwordController = TextEditingController(text: '');
   }
 
   @override
@@ -52,7 +52,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     if (currentUser != null) {
       final updatedProfileInfo = ProfileInfo(
-        userId: currentUser.uid,  // Add userId here
+        userId: currentUser.uid,
         name: _nameController.text,
         studentId: _studentIdController.text,
         contactNumber: _contactNumberController.text,
@@ -61,7 +61,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
       );
 
       try {
-        // Update the profile information in Firestore
         await _firestore.collection('users').doc(currentUser.uid).update({
           'userId': updatedProfileInfo.userId,
           'name': updatedProfileInfo.name,
@@ -71,21 +70,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
           'address': updatedProfileInfo.address,
         });
 
-        // If the password has been changed, update it
         if (_passwordController.text.isNotEmpty) {
           await currentUser.updatePassword(_passwordController.text);
         }
-
-        // Return the updated profile info to the previous screen
         Navigator.pop(context, updatedProfileInfo);
       } catch (e) {
-        // Handle errors
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to update profile: $e')),
         );
       }
     } else {
-      // Handle user not logged in
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('User not logged in.')),
       );

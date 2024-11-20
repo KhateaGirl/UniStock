@@ -52,7 +52,6 @@ class _HomePageState extends State<HomePage> {
         _isLoading = false;
       });
     } catch (e) {
-      print('Error fetching announcements: $e');
       setState(() {
         _isLoading = false;
       });
@@ -194,10 +193,10 @@ class _HomePageState extends State<HomePage> {
               color: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.end, // Pushes the navigation items to the bottom
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 20.0), // Add space between previous content
+                    padding: const EdgeInsets.only(bottom: 20.0),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: widget.navigationItems

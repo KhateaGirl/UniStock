@@ -135,7 +135,7 @@ class _PreOrderPageState extends State<PreOrderPage> {
             'category': item.category,
             'courseLabel': item.courseLabel,
             'pricePerPiece': item.price,
-            'totalPrice': itemTotalPrice, // Add total price for this item (quantity * price)
+            'totalPrice': itemTotalPrice,
           };
 
           preOrderDetails.add(itemData);
@@ -144,10 +144,9 @@ class _PreOrderPageState extends State<PreOrderPage> {
             'itemSize': item.selectedSize ?? 'N/A',
             'quantity': item.quantity,
             'pricePerPiece': item.price,
-            'totalPrice': itemTotalPrice, // Include total price per item for reference
+            'totalPrice': itemTotalPrice,
           });
 
-          // Remove the original pre-order documents
           for (DocumentReference preOrderDocRef in item.documentReferences) {
             batch.delete(preOrderDocRef);
           }
@@ -160,20 +159,16 @@ class _PreOrderPageState extends State<PreOrderPage> {
           'items': preOrderDetails,
           'preOrderDate': FieldValue.serverTimestamp(),
           'status': 'pre-order confirmed',
-          'totalOrderPrice': totalOrderPrice, // Save total order price
+          'totalOrderPrice': totalOrderPrice,
         });
 
         try {
           await batch.commit();
-          print("Pre-ordered items successfully.");
         } catch (e) {
-          print("Failed to complete pre-order operation: $e");
         }
       } else {
-        print("No items selected for pre-order.");
       }
     } else {
-      print("User not logged in");
     }
   }
 

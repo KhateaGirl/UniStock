@@ -84,7 +84,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     try {
                       final int totalPrice = widget.price * widget.quantity;
 
-                      print("Placing Order - Item: ${widget.label}, Price: ${widget.price}, Quantity: ${widget.quantity}, Total: $totalPrice");
                       DocumentReference orderDocRef = await FirebaseFirestore
                           .instance
                           .collection('users')
@@ -103,45 +102,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
                             'quantity': widget.quantity,
                           }
                         ],
-                        'status': 'pending', // Added status here at the top level
+                        'status': 'pending',
                       });
-
-                      print("Order placed successfully with ID: ${orderDocRef.id}");
-
-                      // // Add in-app notification in Firestore under 'notifications'
-                      // await FirebaseFirestore.instance
-                      //     .collection('users')
-                      //     .doc(widget.currentProfileInfo.userId)
-                      //     .collection('notifications')
-                      //     .add({
-                      //   'title': 'Order Placed',
-                      //   'message': 'Your order for ${widget.label} has been successfully placed!',
-                      //   'orderSummary': {
-                      //     'label': widget.label,
-                      //     'itemSize': widget.itemSize,
-                      //     'quantity': widget.quantity,
-                      //     'pricePerPiece': widget.unitPrice,
-                      //     'totalPrice': totalPrice,
-                      //   },
-                      //   'timestamp': FieldValue.serverTimestamp(),
-                      //   'status': 'unread',
-                      // });
-                      //
-                      // print("In-app notification added to Firestore.");
-                      //
-                      // // Local notification for the device
-                      // try {
-                      //   await notificationService.showNotification(
-                      //     widget.currentProfileInfo.userId,
-                      //     0,
-                      //     'Order Placed',
-                      //     'Your order for ${widget.label} has been successfully placed!',
-                      //     orderDocRef.id,
-                      //   );
-                      //   print("Device notification sent successfully.");
-                      // } catch (notificationError) {
-                      //   print("Error sending device notification: $notificationError");
-                      // }
 
                       await _notifyAdmin(
                         widget.currentProfileInfo.name,
@@ -168,7 +130,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
                         ),
                       );
                     } catch (e) {
-                      print("Error placing order: $e");
                     } finally {
                       setState(() {
                         isOrderProcessing = false;
@@ -218,9 +179,7 @@ Total Order Price: ₱${totalPrice.toStringAsFixed(2)}
         'timestamp': FieldValue.serverTimestamp(),
         'status': 'unread',
       });
-      print("Admin has been notified of the new order.");
     } catch (e) {
-      print("Failed to notify admin: $e");
     }
   }
 
@@ -377,9 +336,6 @@ Total Order Price: ₱${totalPrice.toStringAsFixed(2)}
     try {
       final int totalPrice = price * quantity;
 
-      print(
-          "Saving Order - Item: $label, Price: $price, Quantity: $quantity, Total: $totalPrice");
-
       CollectionReference orders = FirebaseFirestore.instance
           .collection('users')
           .doc(currentProfileInfo.userId)
@@ -396,9 +352,7 @@ Total Order Price: ₱${totalPrice.toStringAsFixed(2)}
         'timestamp': FieldValue.serverTimestamp(),
       });
 
-      print("Order added to Firestore");
     } catch (e) {
-      print("Failed to add order: $e");
     }
   }
 

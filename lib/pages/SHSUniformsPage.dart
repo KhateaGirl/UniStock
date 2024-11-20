@@ -23,25 +23,22 @@ class _SHSUniformsPageState extends State<SHSUniformsPage> {
     _fetchItemsFromFirestore();
   }
 
-  // Fetch items from Firestore
   Future<void> _fetchItemsFromFirestore() async {
     try {
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
           .collection('Inventory_stock')
-          .doc('senior_high_items') // Assuming you're fetching from 'senior_high_items'
+          .doc('senior_high_items')
           .collection('Items')
           .get();
 
       List<Map<String, dynamic>> fetchedItems = querySnapshot.docs.map((doc) {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
 
-        // Debug: Print the image path to verify it
-        print('Image URL for ${doc.id}: ${data['imagePath']}');
 
         return {
           'id': doc.id,
           'category': data['category'],
-          'imagePath': data['imagePath'], // Firebase storage URL
+          'imagePath': data['imagePath'],
           'label': data['label'],
           'price': data['price'],
         };
@@ -52,7 +49,6 @@ class _SHSUniformsPageState extends State<SHSUniformsPage> {
         isLoading = false;
       });
     } catch (e) {
-      print('Error fetching items: $e');
       setState(() {
         isLoading = false;
       });
@@ -185,12 +181,11 @@ class _SHSUniformsPageState extends State<SHSUniformsPage> {
 
   Widget buildItem(BuildContext context, String id, String imagePath,
       String label, String? price, String category) {
-    int parsedPrice = 0; // Default value if price is not available
+    int parsedPrice = 0;
     if (price != null && price.isNotEmpty) {
       try {
-        parsedPrice = int.parse(price.replaceAll(RegExp(r'[^\d]'), '')); // Remove non-numeric characters
+        parsedPrice = int.parse(price.replaceAll(RegExp(r'[^\d]'), ''));
       } catch (e) {
-        print('Error parsing price: $e');
       }
     }
 
@@ -202,10 +197,10 @@ class _SHSUniformsPageState extends State<SHSUniformsPage> {
             builder: (context) => DetailSelectionSHS(
               label: label,
               itemSize: category == 'senior_high_items' ? '' : null,
-              imagePath: imagePath, // Pass Firebase Storage URL
-              price: parsedPrice, // Use the parsed price value
+              imagePath: imagePath,
+              price: parsedPrice,
               quantity: 1,
-              currentProfileInfo: widget.currentProfileInfo, // Pass the profile info
+              currentProfileInfo: widget.currentProfileInfo,
             ),
           ),
         );
@@ -223,11 +218,11 @@ class _SHSUniformsPageState extends State<SHSUniformsPage> {
             children: [
               Expanded(
                 child: Image.network(
-                  imagePath, // Use the URL from Firebase Storage
+                  imagePath,
                   width: double.infinity,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
-                    return Icon(Icons.error); // Show an error icon if image fails to load
+                    return Icon(Icons.error);
                   },
                 ),
               ),
@@ -275,7 +270,6 @@ class _SHSUniformsPageState extends State<SHSUniformsPage> {
           children: [
             GestureDetector(
               onTap: () {
-                // Handle fabric button click
               },
               child: Container(
                 padding: EdgeInsets.all(12.0),

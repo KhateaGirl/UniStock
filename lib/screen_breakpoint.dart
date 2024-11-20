@@ -1,6 +1,4 @@
 class ScreenBreakpoint {
-  /// This class is not meant to be instantiated or extended; this constructor
-  /// prevents instantiation and extension.
   ScreenBreakpoint._();
 
   static const double mobileMaxWidth = 550;
